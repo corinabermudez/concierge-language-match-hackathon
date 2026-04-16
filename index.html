@@ -1,0 +1,5116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Concierge Language Match — Coordinator View</title>
+  <link rel="stylesheet" href="css/lpl-tokens.css">
+  <link rel="stylesheet" href="css/lpl-components.css">
+  <link rel="stylesheet" href="css/lpl-icons.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    /* Fonts loaded via css/lpl-tokens.css @font-face declarations */
+
+    :root {
+      /* Use LPL tokens from lpl-tokens.css */
+      --font-text: 'Rebel Sans Text', -apple-system, sans-serif;
+      --font-display: 'Rebel Sans Display', -apple-system, sans-serif;
+      --text-primary: var(--color-text-primary, #1d0c17);
+      --text-secondary: var(--color-text-secondary, #1d0c17b2);
+      --text-tertiary: var(--color-text-tertiary, #1d0c1799);
+      --stroke-tertiary: var(--color-stroke-tertiary, #36220129);
+      --stroke-secondary: var(--color-stroke-secondary, #1d0c1773);
+      --text-interactive: var(--color-text-interactive, #ac2a9e);
+      --surface-primary: var(--color-surface-primary, #ffffff);
+      --surface-secondary: var(--color-surface-secondary, #36220112);
+      --surface-interactive: var(--color-surface-interactive, #820076);
+      --surface-negative: var(--color-surface-negative, #c81534);
+      --surface-positive: var(--color-surface-positive, #197849);
+      --text-positive: var(--color-text-positive, #197849);
+      --text-negative: var(--color-text-negative, #c81534);
+      /* Concierge-specific from Figma */
+      --gray90: var(--color-gray90, #31222a);
+      --gray100: var(--color-gray100, #1d0c17);
+      --purple60: var(--color-purple60, #ac2a9e);
+      --purple70: var(--color-purple70, #820076);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Hide LastPass, password managers, and browser predictive text */
+    div[id^="__lpform"],
+    [data-lastpass-icon-root],
+    [data-lastpass-root],
+    div[style*="lastpass"],
+    div[id*="lastpass"],
+    [id^="__lp"],
+    img[src*="lastpass"],
+    div[class*="lastpass"],
+    [data-dashlanecreated],
+    [data-dashlane-rid],
+    div[class*="onepassword"],
+    input:-webkit-autofill {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      width: 0 !important;
+      height: 0 !important;
+      position: absolute !important;
+      overflow: hidden !important;
+    }
+    .field-wrapper--input [data-lastpass-icon-root],
+    .field-wrapper--input [data-lastpass-root],
+    .field-wrapper--input div[id^="__lp"],
+    .field-wrapper [data-lastpass-icon-root],
+    .field-wrapper [data-lastpass-root],
+    .field-wrapper div[id^="__lp"],
+    .address-field [data-lastpass-icon-root],
+    .address-field [data-lastpass-root],
+    .address-field div[id^="__lp"] {
+      display: none !important;
+      visibility: hidden !important;
+      width: 0 !important;
+      height: 0 !important;
+    }
+    input::-webkit-contacts-auto-fill-button,
+    input::-webkit-credentials-auto-fill-button,
+    input::-webkit-textfield-decoration-container > * { display: none !important; visibility: hidden !important; pointer-events: none !important; }
+    input { -webkit-text-security: none; }
+
+    body {
+      font-family: var(--font-text);
+      background: #f5f3f2;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Top Nav with Dropdowns ── */
+    .proto-nav {
+      background: #fff;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      height: 52px;
+      border-bottom: 1px solid var(--stroke-tertiary);
+      flex-shrink: 0;
+      z-index: 200;
+    }
+    .proto-nav__title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-right: 16px;
+      white-space: nowrap;
+    }
+    .proto-nav__divider {
+      width: 1px;
+      height: 24px;
+      background: var(--stroke-tertiary);
+      margin: 0 8px;
+    }
+    /* Dropdown wrapper */
+    .proto-dropdown {
+      position: relative;
+    }
+    .proto-dropdown__trigger {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      background: none;
+      color: var(--text-secondary);
+      font-family: var(--font-text);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .proto-dropdown__trigger:hover {
+      background: var(--surface-secondary);
+    }
+    .proto-dropdown__trigger.has-active {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+    .proto-dropdown__trigger.open {
+      background: var(--surface-secondary);
+      border-color: var(--stroke-secondary);
+    }
+    .proto-dropdown__chevron {
+      width: 10px;
+      height: 10px;
+      transition: transform 0.2s;
+    }
+    .proto-dropdown__trigger.open .proto-dropdown__chevron {
+      transform: rotate(180deg);
+    }
+    .proto-dropdown__menu {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      min-width: 200px;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.12), 0 0 1px rgba(0,0,0,0.12);
+      padding: 6px;
+      z-index: 300;
+    }
+    .proto-dropdown__menu.open {
+      display: block;
+    }
+    .proto-dropdown__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+      font-family: var(--font-text);
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+    .proto-dropdown__item:hover {
+      background: var(--surface-secondary);
+    }
+    .proto-dropdown__item.active {
+      background: rgba(130,0,118,0.08);
+      color: var(--surface-interactive);
+      font-weight: 600;
+    }
+    .proto-dropdown__item-number {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      min-width: 24px;
+      flex-shrink: 0;
+    }
+    .proto-dropdown__item.active .proto-dropdown__item-number {
+      color: var(--surface-interactive);
+    }
+    /* Active screen label shown on trigger */
+    .proto-dropdown__active-label {
+      font-size: 12px;
+      color: var(--surface-interactive);
+      font-weight: 600;
+      margin-left: 2px;
+    }
+    /* Scrim to close dropdowns */
+    .proto-dropdown__scrim {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 199;
+    }
+    .proto-dropdown__scrim.open {
+      display: block;
+    }
+
+    /* ── Concierge Shell ── */
+    .concierge-shell {
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--surface-primary);
+      border-radius: 0;
+      overflow: hidden;
+      box-shadow: 0 2px 24px rgba(0,0,0,0.08);
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Header (Figma: gray100 #1d0c17, 48px, pl-24 pr-16 py-5) ── */
+    .concierge-header {
+      background: #1d0c17;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 16px 0 24px;
+    }
+    .concierge-logo {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 18px;
+      height: 28px;
+    }
+    .concierge-logo span.lyft {
+      color: #ff00bf;
+      font-weight: 700;
+      font-size: 20px;
+      letter-spacing: -0.5px;
+    }
+    .concierge-logo span.label {
+      font-weight: 400;
+      font-size: 16px;
+      color: rgba(255,255,255,0.85);
+      margin-left: 2px;
+    }
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .header-right .search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      cursor: pointer;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .header-right .profile-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: white;
+      font-size: 14px;
+      font-weight: 500;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .profile-icon {
+      width: 32px; height: 32px;
+      border: 1.5px solid rgba(255,255,255,0.6);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .profile-icon .lpl-icon {
+      width: 24px; height: 24px;
+    }
+
+    /* ── Nav (Figma: gray90 #31222a, 56px, Level 3 elevation) ── */
+    .concierge-nav {
+      background: #31222a;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 0;
+      box-shadow: 0 0 1px rgba(0,0,0,0.12), 0 2px 4px rgba(0,0,0,0.16);
+      position: relative;
+      z-index: 2;
+    }
+    .nav-request {
+      height: 40px;
+      border: 2px solid white;
+      border-radius: 56px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 500;
+      color: white;
+      cursor: pointer;
+      background: transparent;
+      font-family: var(--font-text);
+      font-variation-settings: 'GRAD' 100;
+      margin-right: 24px;
+      transition: background 0.15s;
+    }
+    .nav-request:hover { background: rgba(255,255,255,0.1); }
+    .nav-request.active { background: rgba(255,255,255,0.15); }
+    .nav-tab {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .nav-tab:hover { color: white; }
+    .nav-tab.active {
+      color: white;
+      border-bottom-color: white;
+    }
+
+    /* ── Layout ── */
+    .concierge-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .sidebar {
+      width: 384px;
+      min-width: 384px;
+      overflow-y: auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar-content {
+      flex: 1;
+      padding: 32px 24px 24px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .map-area {
+      flex: 1;
+      background: #e8e6e3;
+      position: relative;
+      overflow: hidden;
+    }
+    .map-area .leaflet-map {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    .map-area > img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.4;
+    }
+    .map-area .leaflet-marker-icon img {
+      opacity: 1 !important;
+    }
+    .map-placeholder {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background:
+        linear-gradient(rgba(200,195,190,0.3) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(200,195,190,0.3) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+    .map-placeholder::after {
+      content: 'Map View';
+      font-size: 14px;
+      color: var(--text-tertiary);
+      background: rgba(255,255,255,0.8);
+      padding: 8px 16px;
+      border-radius: 8px;
+    }
+
+    /* ── Form Elements ── */
+    .form-section { margin-bottom: 24px; }
+    .form-section-title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 8px;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .page-title {
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 600;
+      color: var(--text-primary);
+      line-height: 32px;
+      margin-bottom: 24px;
+    }
+
+    .input-row { display: flex; gap: 8px; margin-bottom: 8px; }
+    .input-row--full { margin-bottom: 0; }
+    .input-row--full .field-wrapper { flex: 1; }
+
+    /* Interactive form fields */
+    .field-wrapper--input {
+      position: relative;
+      padding: 0 !important;
+    }
+    .field-input {
+      width: 100%;
+      height: 64px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-text);
+      font-size: 16px;
+      color: var(--text-primary);
+      padding: 26px 16px 12px 16px;
+      outline: none;
+    }
+    .field-input::placeholder { color: transparent; }
+    .field-input-label {
+      position: absolute;
+      top: 50%;
+      left: 16px;
+      transform: translateY(-50%);
+      font-size: 16px;
+      color: var(--text-tertiary);
+      pointer-events: none;
+      transition: all 0.15s ease;
+      font-family: var(--font-text);
+    }
+    .field-input:focus ~ .field-input-label,
+    .field-input:not(:placeholder-shown) ~ .field-input-label {
+      top: 12px;
+      transform: translateY(0);
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1;
+    }
+    .field-wrapper--input:focus-within {
+      border-color: var(--surface-interactive);
+      border-width: 2px;
+    }
+
+    /* Select field */
+    .field-wrapper--select {
+      position: relative;
+      padding: 0 !important;
+    }
+    .field-wrapper--select:focus-within {
+      border-color: var(--surface-interactive);
+      border-width: 2px;
+      box-shadow: 0 0 0 3px rgba(130, 0, 118, 0.12);
+    }
+    .field-wrapper--select .field-input-label--select {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      pointer-events: none;
+      line-height: 1;
+    }
+    .field-select {
+      width: 100%;
+      height: 64px;
+      border: none;
+      background: transparent;
+      font-family: var(--font-text);
+      font-size: 16px;
+      color: var(--text-primary);
+      padding: 28px 40px 16px 16px;
+      outline: none;
+      appearance: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+    }
+
+    /* Address input */
+    .address-input {
+      flex: 1;
+      border: none;
+      background: transparent;
+      font-family: var(--font-text);
+      font-size: 16px;
+      color: var(--text-primary);
+      outline: none;
+    }
+    .address-input::placeholder { color: var(--text-tertiary); }
+    .address-field:focus-within {
+      border-color: var(--surface-interactive);
+      border-width: 2px;
+    }
+    .input-field {
+      flex: 1;
+      height: 56px;
+      border: 1px solid var(--stroke-secondary);
+      border-radius: 12px;
+      padding: 24px 16px 8px;
+      font-family: var(--font-text);
+      font-size: 16px;
+      color: var(--text-primary);
+      background: var(--surface-primary);
+      position: relative;
+    }
+    .input-field--filled { border-color: var(--stroke-secondary); }
+    .input-label {
+      position: absolute;
+      top: 8px;
+      left: 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 400;
+    }
+    .input-value {
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+    .field-wrapper {
+      position: relative;
+      height: 56px;
+      border: 1px solid var(--stroke-secondary);
+      border-radius: 12px;
+      padding: 8px 16px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      margin-bottom: 8px;
+      background: var(--surface-primary);
+    }
+    .field-wrapper--highlight {
+      border-color: var(--surface-interactive);
+      border-width: 2px;
+      box-shadow: 0 0 0 3px rgba(130, 0, 118, 0.12);
+    }
+    .field-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+    .field-value {
+      font-size: 16px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .field-chevron { color: var(--text-secondary); font-size: 12px; }
+
+    .address-field {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 56px;
+      border: 1px solid var(--stroke-secondary);
+      border-radius: 12px;
+      padding: 0 16px;
+      margin-bottom: 8px;
+      background: var(--surface-primary);
+    }
+    .address-dot {
+      width: 12px; height: 12px;
+      border: 2px solid var(--surface-interactive);
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .address-dot--filled { background: var(--surface-interactive); }
+    .address-text { font-size: 16px; color: var(--text-primary); }
+    .address-text--placeholder { color: var(--text-tertiary); }
+
+    .info-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: flex-start;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .info-text .lpl-icon {
+      margin-top: 1px;
+    }
+
+    .expandable-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 0;
+    }
+    .expandable-row__title {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-variation-settings: 'GRAD' 100;
+    }
+    .expandable-row__action {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-interactive);
+      cursor: pointer;
+      font-variation-settings: 'GRAD' 100;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--stroke-tertiary);
+      margin: 32px 0;
+    }
+
+    .inline-card {
+      background: var(--surface-secondary);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 8px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .inline-card__icon {
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .inline-card__body {
+      flex: 1;
+    }
+    .inline-card__title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .inline-card__detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+    }
+    .inline-card__link {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-interactive);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-variation-settings: 'GRAD' 100;
+    }
+
+    .cost-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 8px;
+    }
+
+    /* ── Sticky Footer ── */
+    .sticky-footer {
+      flex-shrink: 0;
+      background: var(--surface-primary);
+      padding: 16px 24px;
+      box-shadow: 0 -4px 12px rgba(0,0,0,0.08);
+    }
+    .sticky-footer__legal {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 18px;
+    }
+    .btn-row { display: flex; gap: 8px; }
+
+    .btn {
+      height: 48px;
+      border-radius: 9999px;
+      border: none;
+      font-family: var(--font-text);
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 24px;
+      transition: all 0.15s;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .btn--primary {
+      background: var(--surface-interactive);
+      color: #fff;
+      flex: 1;
+    }
+    .btn--primary:hover { opacity: 0.9; }
+    .btn--secondary {
+      background: var(--surface-primary);
+      color: var(--text-primary);
+      border: 1px solid var(--stroke-secondary);
+    }
+    .btn--secondary:hover { background: var(--surface-secondary); }
+
+    /* ── NEW: Wait-Time Selector (C-2) ── */
+    .wait-selector {
+      background: rgba(130, 0, 118, 0.04);
+      border: 1px solid rgba(130, 0, 118, 0.15);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 12px;
+    }
+    .wait-selector__title {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .wait-selector__desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      line-height: 18px;
+    }
+    .wait-options {
+      display: flex;
+      gap: 8px;
+    }
+    .wait-option {
+      flex: 1;
+      height: 32px;
+      border-radius: 9999px;
+      border: none;
+      background: var(--color-surface-secondary, rgba(54,34,1,0.07));
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 500;
+      line-height: normal;
+      color: var(--color-text-primary, #1d0c17);
+      cursor: pointer;
+      transition: all var(--duration-quick, 0.1s);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      white-space: nowrap;
+      padding: 0 12px;
+    }
+    .wait-option:active { opacity: 0.7; }
+    .wait-option.active {
+      background: var(--color-surface-interactive, #820076);
+      color: var(--color-text-primary-inverse, #fff);
+    }
+
+    /* ── Toggle Switch ── */
+    .switch {
+      width: 48px;
+      height: 28px;
+      border-radius: 14px;
+      background: var(--stroke-secondary);
+      cursor: pointer;
+      position: relative;
+      transition: background 0.2s;
+    }
+    .switch__thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #fff;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .switch.switch--on {
+      background: var(--surface-interactive);
+    }
+    .switch.switch--on .switch__thumb {
+      transform: translateX(20px);
+    }
+
+    /* ── Language Match Card (C-1) ── */
+    .lang-match-card {
+      border: 1px solid var(--color-stroke-secondary, rgba(29,12,23,0.45));
+      border-radius: 12px;
+      margin-top: 12px;
+      overflow: hidden;
+      display: none;
+      background: transparent;
+    }
+    .lang-match-card.visible { display: block; }
+    .lang-match-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 16px;
+    }
+    .lang-match-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface-secondary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .lang-match-icon .lpl-icon {
+      opacity: 0.7;
+    }
+    .lang-match-info { flex: 1; }
+    .lang-match-title {
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 600;
+      line-height: var(--text-title-f3-line-height, 19px);
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .lang-match-desc {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .lang-match-desc span {
+      font-weight: 400;
+    }
+    .lang-match-toggle {
+      flex-shrink: 0;
+    }
+    .lang-match-body {
+      display: none;
+      padding: 0 16px 16px;
+    }
+    .lang-match-body.visible { display: block; }
+    .lang-match-body__divider {
+      height: 1px;
+      background: var(--stroke-tertiary);
+      margin-bottom: 16px;
+    }
+    .lang-match-body__label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 600;
+      line-height: var(--text-title-f3-line-height, 19px);
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 12px;
+    }
+    .lang-match-body__label .lpl-icon {
+      opacity: 0.7;
+    }
+    .lang-match-info-box {
+      background: rgba(130, 0, 118, 0.05);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+    }
+    .lang-match-info-box .lpl-icon {
+      flex-shrink: 0;
+      opacity: 0.5;
+      margin-top: 1px;
+    }
+    .lang-match-info-box__text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* ── Radio Options ── */
+    .radio-group { display: flex; flex-direction: column; gap: 12px; }
+    .radio-item { display: flex; align-items: flex-start; gap: 12px; }
+    .radio-circle {
+      width: 24px; height: 24px;
+      border: 2px solid var(--text-tertiary);
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .radio-circle.selected {
+      border-color: var(--surface-interactive);
+    }
+    .radio-circle.selected::after {
+      content: '';
+      width: 12px; height: 12px;
+      background: var(--surface-interactive);
+      border-radius: 50%;
+    }
+    .radio-label {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-variation-settings: 'GRAD' 100;
+    }
+    .radio-desc {
+      font-size: 14px;
+      color: var(--text-tertiary);
+      margin-top: 2px;
+      line-height: 20px;
+    }
+    .radio-desc a { color: var(--text-interactive); }
+
+    /* ── Ride Types ── */
+    .ride-type-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .ride-type-row:hover { background: var(--surface-secondary); }
+    .ride-type-img {
+      width: 72px;
+      height: 51px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0;
+      color: var(--text-tertiary);
+      overflow: hidden;
+    }
+    .ride-type-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .ride-type-info { flex: 1; }
+    .ride-type-name {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-variation-settings: 'GRAD' 100;
+    }
+    .ride-type-detail {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .ride-type-badge {
+      font-size: 14px;
+      color: var(--text-interactive);
+      font-weight: 500;
+    }
+    .ride-type-price {
+      text-align: right;
+    }
+    .ride-type-price__amount {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      font-variation-settings: 'GRAD' 100;
+    }
+    .ride-type-price__eta {
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .ride-sub {
+      padding: 8px 16px 8px 108px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .ride-sub:hover { background: var(--surface-secondary); }
+    .ride-sub.selected {
+      background: rgba(130, 0, 118, 0.06);
+      border-left: 4px solid var(--text-interactive);
+      padding-left: 104px;
+    }
+
+    /* ── Active Rides Layout (C-3, C-4, C-5) ── */
+
+    /* Ride list sidebar items */
+    .ride-list-item {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      border-bottom: 1px solid var(--stroke-tertiary);
+      cursor: pointer;
+      background: white;
+      transition: background 0.15s;
+    }
+    .ride-list-item:hover { background: var(--surface-secondary); }
+    .ride-list-item.selected { background: #e8e7e8; }
+    .ride-list-item__icon {
+      width: 24px; height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+    }
+    /* Exact color overrides for map-point-waypoint icons */
+    .icon-color-purple .lpl-icon--map-point-waypoint {
+      background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M16 29C8.836 29 3 23.164 3 16S8.836 3 16 3s13 5.836 13 13-5.836 13-13 13zm0-19.99A6.998 6.998 0 0 0 9.01 16 6.998 6.998 0 0 0 16 22.99 6.998 6.998 0 0 0 22.99 16 6.998 6.998 0 0 0 16 9.01z' fill='%23820076'/%3E %3C/svg%3E");
+    }
+    .icon-color-purple-50 .lpl-icon--map-point-waypoint {
+      background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M16 29C8.836 29 3 23.164 3 16S8.836 3 16 3s13 5.836 13 13-5.836 13-13 13zm0-19.99A6.998 6.998 0 0 0 9.01 16 6.998 6.998 0 0 0 16 22.99 6.998 6.998 0 0 0 22.99 16 6.998 6.998 0 0 0 16 9.01z' fill='%23820076' opacity='0.5'/%3E %3C/svg%3E");
+    }
+    .icon-color-pink .lpl-icon--map-point-waypoint {
+      background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M16 29C8.836 29 3 23.164 3 16S8.836 3 16 3s13 5.836 13 13-5.836 13-13 13zm0-19.99A6.998 6.998 0 0 0 9.01 16 6.998 6.998 0 0 0 16 22.99 6.998 6.998 0 0 0 22.99 16 6.998 6.998 0 0 0 16 9.01z' fill='%23CF0090'/%3E %3C/svg%3E");
+    }
+    .ride-list-item__content {
+      flex: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-left: 16px;
+    }
+    .ride-list-item__name {
+      font-size: 16px;
+      color: var(--text-primary);
+    }
+    .ride-list-item__date {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 4px;
+    }
+    .ride-list-item__status {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: right;
+      width: 110px;
+    }
+
+    /* Toast notification */
+    .concierge-toast {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: white;
+      border-radius: 16px;
+      padding: 12px 16px;
+      box-shadow: 0 6px 10px rgba(0,0,0,0.16), 0 0 1px rgba(0,0,0,0.12);
+      z-index: 10;
+      animation: toastIn 0.3s ease-out;
+      transition: opacity 0.4s, transform 0.4s;
+    }
+    .concierge-toast.hiding {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+    @keyframes toastIn {
+      from { opacity: 0; transform: translateY(-12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .toast-icon {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--surface-positive);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+    .toast-text {
+      font-size: 13px;
+      font-weight: 500;
+      line-height: 19px;
+      color: var(--text-primary);
+      font-variation-settings: 'GRAD' 100;
+    }
+
+    /* Expanded ride card (floating over map) */
+    .ride-card {
+      position: absolute;
+      top: 24px;
+      bottom: 0;
+      left: 24px;
+      width: 608px;
+      background: white;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 0 1px rgba(0,0,0,0.12), 0 0 14px rgba(0,0,0,0.16);
+      z-index: 5;
+      overflow-y: auto;
+    }
+    .ride-card__header {
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ride-card__car {
+      width: 109px;
+      height: 56px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .ride-card__car-placeholder {
+      width: 90px; height: 40px;
+      background: var(--surface-secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      color: var(--text-tertiary);
+    }
+    .ride-card__driver-avatar {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-interactive);
+      color: white;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+      object-fit: cover;
+    }
+    .ride-card__info { flex: 1; }
+    .ride-card__title {
+      font-size: 18px;
+      font-weight: 500;
+      line-height: 25px;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .ride-card__title--indigo { color: #5725cf; }
+    .ride-card__title--primary { color: var(--text-primary); }
+    .ride-card__title--negative { color: var(--text-negative); }
+    .ride-card__subtitle {
+      font-size: 16px;
+      color: var(--text-secondary);
+      line-height: 20px;
+    }
+    .ride-card__actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .ride-card__action-btn {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: none;
+      background: var(--surface-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: var(--text-primary);
+    }
+
+    /* Panel Banner (language match indicator) */
+    .language-match-bar {
+      background: #f4f4fa;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary, #1d0c17);
+      border-radius: 16px 16px 0 0;
+    }
+    .language-match-bar .lpl-icon {
+      flex-shrink: 0;
+    }
+    /* When banner is present, header sits on top with drop shadow */
+    .ride-card:has(.language-match-bar) {
+      border-radius: 16px 16px 0 0;
+      overflow-x: hidden;
+      overflow-y: auto;
+      background: white;
+    }
+    .ride-card__sticky-group {
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      background: white;
+    }
+    .ride-card__sticky-group .ride-card__header {
+      background: white;
+      box-shadow: 0 -2px 4px rgba(0,0,0,0.06);
+    }
+    .ride-card__sticky-group .ride-card__tabs {
+      background: white;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(1.3); }
+    }
+
+    /* Gradient progress loader (Looking for drivers) */
+    .gradient-loader {
+      height: 2px;
+      width: 100%;
+      position: relative;
+      background: var(--stroke-tertiary);
+      overflow: hidden;
+    }
+    .gradient-loader__bar {
+      position: absolute;
+      inset: 0;
+      width: 50%;
+      background: linear-gradient(90deg, #ff00bf, #7b20f9, #ff00bf);
+      animation: loaderSlide 1.5s ease-in-out infinite;
+    }
+    @keyframes loaderSlide {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(300%); }
+    }
+
+    /* Card tabs */
+    .ride-card__tabs {
+      display: flex;
+      height: 48px;
+      border-bottom: 1px solid var(--stroke-tertiary);
+    }
+    .ride-card__tab {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .ride-card__tab.active {
+      color: var(--text-primary);
+      border-bottom-color: var(--stroke-interactive, var(--surface-interactive));
+    }
+
+    /* Card content sections */
+    .ride-card__section {
+      padding: 24px;
+    }
+    .ride-card__section + .ride-card__section {
+      border-top: 1px solid var(--stroke-tertiary);
+    }
+    .ride-card__section-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 16px;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .ride-card__section-title .lpl-icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .ride-card__action-btn .lpl-icon {
+      width: 16px;
+      height: 16px;
+    }
+    .match-badge .lpl-icon {
+      width: 16px;
+      height: 16px;
+    }
+    .ride-card__row {
+      display: flex;
+      gap: 24px;
+      margin-bottom: 12px;
+    }
+    .ride-card__field {
+      width: 170px;
+      flex-shrink: 0;
+    }
+    .ride-card__field--full { width: auto; flex: 1; }
+    .ride-card__field-label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 2px;
+    }
+    .ride-card__field-value {
+      font-size: 16px;
+      color: var(--text-primary);
+      line-height: 22px;
+    }
+
+    /* Route address rows */
+    .ride-card__address {
+      display: flex;
+      gap: 8px;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .ride-card__address-dot {
+      width: 16px; height: 16px;
+      margin-top: 12px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .ride-card__address-dot::after {
+      content: '';
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid var(--surface-interactive);
+    }
+    .ride-card__address-dot--filled::after {
+      background: var(--surface-interactive);
+    }
+    .ride-card__address-note {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 18px;
+      margin-top: 8px;
+    }
+
+    .waypoint-pickup .lpl-icon--map-point-waypoint {
+      background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M16 29C8.836 29 3 23.164 3 16S8.836 3 16 3s13 5.836 13 13-5.836 13-13 13zm0-19.99A6.998 6.998 0 0 0 9.01 16 6.998 6.998 0 0 0 16 22.99 6.998 6.998 0 0 0 22.99 16 6.998 6.998 0 0 0 16 9.01z' fill='%23820076'/%3E %3C/svg%3E");
+    }
+    .waypoint-dropoff .lpl-icon--map-point-waypoint {
+      background-image: url("data:image/svg+xml,%3Csvg width='32' height='32' viewBox='0 0 32 32' fill='none' xmlns='http://www.w3.org/2000/svg'%3E %3Cpath d='M16 29C8.836 29 3 23.164 3 16S8.836 3 16 3s13 5.836 13 13-5.836 13-13 13zm0-19.99A6.998 6.998 0 0 0 9.01 16 6.998 6.998 0 0 0 16 22.99 6.998 6.998 0 0 0 22.99 16 6.998 6.998 0 0 0 16 9.01z' fill='%23CF0090'/%3E %3C/svg%3E");
+    }
+
+    /* Match badges */
+    .match-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 13px;
+      font-weight: 600;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .match-badge--success {
+      background: rgba(10, 130, 36, 0.1);
+      color: var(--surface-positive);
+    }
+    .match-badge--fallback {
+      background: rgba(200, 21, 52, 0.08);
+      color: var(--surface-negative);
+    }
+
+    /* ── Admin Layout (A-1) ── */
+    .admin-shell {
+      display: flex;
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: var(--color-background-neutral, #f1f0f0);
+      font-family: var(--font-text);
+    }
+    .admin-sidebar {
+      width: 240px;
+      min-width: 240px;
+      background: var(--color-gray100, #1d0c17);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+      overflow: hidden;
+    }
+    .admin-sidebar__logo {
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .admin-sidebar__nav {
+      flex: 1;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      min-height: 0;
+    }
+    .admin-nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 24px;
+      color: rgba(255,255,255,0.6);
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .admin-nav-item:hover { background: rgba(255,255,255,0.08); }
+    .admin-nav-item--open { color: rgba(255,255,255,0.85); }
+    .admin-nav-item--highlight {
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      margin: 2px 12px;
+      padding: 14px 16px;
+    }
+    .admin-nav-group { }
+    .admin-nav-sub {
+      padding: 2px 0;
+    }
+    .admin-nav-subitem {
+      display: block;
+      padding: 8px 24px 8px 56px;
+      color: rgba(255,255,255,0.5);
+      font-size: 15px;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .admin-nav-subitem:hover { color: white; background: rgba(255,255,255,0.06); }
+    .admin-nav-subitem--active {
+      color: white;
+      background: var(--surface-interactive, #820076);
+      border-radius: 8px;
+      margin: 2px 12px;
+      padding: 8px 16px 8px 44px;
+    }
+    .admin-nav-divider {
+      height: 1px;
+      background: rgba(255,255,255,0.12);
+      margin: 4px 24px;
+    }
+    .admin-nav-spacer {
+      flex: 1;
+    }
+    .admin-sidebar__bottom-nav {
+      padding: 0;
+    }
+    .admin-sidebar__user {
+      padding: 16px 24px;
+      color: rgba(255,255,255,0.6);
+      font-size: 16px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      border-top: 1px solid rgba(255,255,255,0.12);
+    }
+    .admin-main {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      background: var(--color-background-neutral, #f1f0f0);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .admin-breadcrumb {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .admin-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+    .admin-page-title {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+      margin: 0;
+    }
+    .admin-badge-live {
+      background: var(--surface-positive, #0a8224);
+      color: white;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 2px 12px;
+      border-radius: 999px;
+    }
+    .admin-icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 1px solid var(--stroke-tertiary);
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .admin-send-btn {
+      background: var(--surface-interactive, #820076);
+      color: white;
+      border: none;
+      border-radius: 999px;
+      padding: 10px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      font-family: var(--font-text);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .admin-metrics {
+      display: flex;
+      border-radius: 12px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      background: white;
+    }
+    .admin-metric {
+      flex: 1;
+      padding: 16px 20px;
+      border-right: 1px solid var(--stroke-tertiary);
+    }
+    .admin-metric:last-child { border-right: none; }
+    .admin-metric__label {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 4px;
+    }
+    .admin-metric__value {
+      font-size: 24px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: var(--font-display);
+    }
+    .admin-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--stroke-tertiary);
+      margin-top: 24px;
+      margin-bottom: 40px;
+    }
+    .admin-tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -1px;
+    }
+    .admin-tab--active {
+      color: var(--text-primary);
+      border-bottom-color: var(--surface-interactive, #820076);
+    }
+    .admin-content {
+      padding: 0;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Ride History Table ── */
+    .history-table-wrap {
+      background: white;
+      border-radius: 12px;
+      border: 1px solid var(--stroke-tertiary);
+      overflow: hidden;
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .history-table-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      gap: 12px;
+    }
+    .history-table-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid var(--stroke-tertiary);
+      border-radius: 8px;
+      padding: 8px 12px;
+      width: 280px;
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+    .history-table-search .lpl-icon { opacity: 0.5; }
+    .history-table-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .history-table-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: 1px solid var(--stroke-tertiary);
+      border-radius: 8px;
+      background: white;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      font-family: var(--font-text);
+    }
+    .filter-dropdown {
+      display: none;
+      position: absolute;
+      top: calc(100% + 4px);
+      right: 0;
+      background: white;
+      border: 1px solid var(--stroke-tertiary);
+      border-radius: 10px;
+      padding: 8px 0;
+      min-width: 200px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+      z-index: 10;
+    }
+    .filter-dropdown.open { display: block; }
+    .filter-dropdown__item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+    }
+    .filter-dropdown__item:hover { background: var(--surface-secondary); }
+    .filter-dropdown__item input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--surface-interactive, #820076);
+    }
+    .history-table-scroll {
+      overflow-x: auto;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+    .history-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      min-width: 1100px;
+    }
+    .history-table th {
+      text-align: left;
+      padding: 10px 16px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--stroke-tertiary);
+      border-top: 1px solid var(--stroke-tertiary);
+      white-space: nowrap;
+      background: white;
+    }
+    .history-table th + th {
+      border-left: 1px solid var(--stroke-tertiary);
+    }
+    .history-table td + td {
+      border-left: 1px solid var(--stroke-tertiary);
+    }
+    .history-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--stroke-tertiary);
+      color: var(--text-primary);
+      vertical-align: middle;
+      font-size: 14px;
+    }
+    .history-table tr:last-child td { border-bottom: none; }
+    .history-table tbody tr:nth-child(even) td { background: var(--surface-secondary); }
+    .history-table .td-rider-name { font-weight: 500; }
+    .history-table .td-rider-id { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+    .history-table .td-match-status { font-size: 13px; }
+    .history-table-pagination {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-top: 1px solid var(--stroke-tertiary);
+    }
+    .history-table-pagination__nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .history-table-pagination__nav button {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--stroke-tertiary);
+      background: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* ── iOS Messages / SMS Screens ── */
+    .sms-phone-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sms-phone {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: #fff;
+      box-shadow: 0 0 0 3px #1d0c17, 0 8px 40px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      font-family: var(--font-family, 'Rebel Sans Text', sans-serif);
+      flex-shrink: 0;
+      transform-origin: center center;
+    }
+    .sms-status-bar {
+      height: 54px;
+      padding: 14px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .sms-status-time {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .sms-status-icons {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .sms-header {
+      display: flex;
+      align-items: center;
+      padding: 4px 16px 10px;
+      background: #fff;
+      border-bottom: 0.5px solid rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+    .sms-header__back {
+      padding: 4px 8px 4px 0;
+      cursor: pointer;
+    }
+    .sms-header__contact {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    img.sms-header__avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: block;
+    }
+    .sms-header__name {
+      font-size: 13px;
+      font-weight: 600;
+      color: #000;
+    }
+    .sms-header__name span {
+      font-size: 10px;
+    }
+    .sms-header__action {
+      padding: 4px;
+      cursor: pointer;
+    }
+    .sms-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 16px 24px;
+      background: #fff;
+    }
+    .sms-date {
+      text-align: center;
+      font-size: 12px;
+      color: #8e8e93;
+      padding: 12px 0 8px;
+    }
+    .sms-bubble {
+      max-width: 85%;
+      margin-bottom: 8px;
+    }
+    .sms-bubble--received {
+      margin-right: auto;
+    }
+    .sms-bubble__text {
+      background: #e9e9eb;
+      color: #000;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 16px;
+      line-height: 1.35;
+      border-bottom-left-radius: 4px;
+    }
+    .sms-bubble__text strong {
+      font-weight: 600;
+    }
+    .sms-link {
+      text-decoration: underline;
+      color: inherit;
+    }
+    .sms-link-preview {
+      margin-top: 4px;
+      border-radius: 18px;
+      overflow: hidden;
+      background: #e9e9eb;
+      border-bottom-left-radius: 4px;
+    }
+    .sms-link-preview__image {
+      height: 180px;
+      background: linear-gradient(135deg, #e8e6e3 0%, #d4d1cd 100%);
+      overflow: hidden;
+      position: relative;
+    }
+    .sms-link-preview__image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .sms-link-preview__banner {
+      background: rgba(54,34,1,0.16);
+      padding: 10px 14px;
+    }
+    .sms-link-preview__title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1d0c17;
+    }
+    .sms-link-preview__domain {
+      font-size: 12px;
+      color: rgba(29,12,23,0.6);
+      margin-top: 1px;
+    }
+    .sms-input-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: #fff;
+      border-top: 0.5px solid rgba(0,0,0,0.12);
+      flex-shrink: 0;
+    }
+    .sms-input-bar__plus {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e9e9eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: #8e8e93;
+      font-size: 20px;
+      font-weight: 300;
+    }
+    .sms-input-bar__field {
+      flex: 1;
+      height: 36px;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.18);
+      padding: 0 14px;
+      font-size: 16px;
+      color: #c7c7cc;
+      display: flex;
+      align-items: center;
+    }
+    .sms-bubble__time {
+      font-size: 11px;
+      color: #8e8e93;
+      margin-top: 4px;
+      padding-left: 4px;
+    }
+    .sms-home-indicator {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .sms-home-indicator__bar {
+      width: 134px;
+      height: 5px;
+      border-radius: 3px;
+      background: #000;
+    }
+
+    /* ── Tip Selector ── */
+    .tip-selector {
+      display: flex;
+      gap: 0;
+      border: 1px solid var(--stroke-secondary);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .tip-option {
+      flex: 1;
+      height: 48px;
+      border: none;
+      border-right: 1px solid var(--stroke-tertiary);
+      background: var(--surface-primary);
+      font-family: var(--font-text);
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--text-primary);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-variation-settings: 'GRAD' 100;
+    }
+    .tip-option:last-child { border-right: none; }
+    .tip-option.active {
+      background: var(--surface-interactive);
+      color: #fff;
+    }
+    .tip-option__pct { font-size: 14px; font-weight: 600; }
+    .tip-option__amt { font-size: 11px; opacity: 0.7; }
+
+    /* ── Active screen ── */
+    .screen-panel { display: none; }
+    .screen-panel.active { display: flex; flex-direction: column; flex: 1; }
+
+    /* ── Map pins ── */
+    .map-pin-group {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+    .map-pin {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    .map-pin--pickup { background: var(--surface-interactive); }
+    .map-pin--dropoff { background: var(--text-primary); }
+    .map-route {
+      position: absolute;
+      top: calc(50% - 4px);
+      left: calc(50% - 1px);
+      width: 2px;
+      height: 40px;
+      background: var(--text-primary);
+      opacity: 0.3;
+    }
+
+    /* ── Searching detail ── */
+    .search-detail {
+      width: 100%;
+      text-align: left;
+    }
+    .search-detail__item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 0;
+      font-size: 14px;
+      color: var(--text-secondary);
+    }
+    .search-detail__dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .search-detail__dot--active {
+      background: var(--surface-interactive);
+      box-shadow: 0 0 0 3px rgba(130, 0, 118, 0.15);
+    }
+    .search-detail__dot--done {
+      background: var(--surface-positive);
+    }
+
+    /* ── Full-width history layout ── */
+    .full-width-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px 48px;
+    }
+    .full-width-content .page-title { margin-bottom: 16px; }
+
+    /* ══ R4 Lock Screen ══ */
+    .lock-screen {
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .lock-screen__time {
+      text-align: center;
+      padding-top: 80px;
+      font-size: 72px;
+      font-weight: 200;
+      letter-spacing: 2px;
+      line-height: 1;
+    }
+    .lock-screen__date {
+      text-align: center;
+      font-size: 18px;
+      font-weight: 400;
+      margin-top: 4px;
+      opacity: 0.7;
+    }
+    .lock-screen__notifications {
+      flex: 1;
+      padding: 40px 16px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .lock-notif {
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .lock-notif:active { background: rgba(255,255,255,0.25); }
+    .lock-notif__icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      overflow: hidden;
+    }
+    .lock-notif__icon img { width: 100%; height: 100%; }
+    .lock-notif__body { flex: 1; min-width: 0; }
+    .lock-notif__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+    .lock-notif__app {
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0.85;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .lock-notif__when {
+      font-size: 12px;
+      opacity: 0.5;
+    }
+    .lock-notif__title {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    .lock-notif__text {
+      font-size: 14px;
+      opacity: 0.8;
+      line-height: 1.3;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .lock-screen__bottom {
+      padding: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .lock-screen__hint {
+      width: 100%;
+      text-align: center;
+      font-size: 13px;
+      opacity: 0.5;
+      padding-bottom: 8px;
+    }
+
+    /* ══ R5 App Ride Details ══ */
+    .app-phone {
+      width: 393px;
+      height: 852px;
+      border-radius: 50px;
+      background: #fff;
+      box-shadow: 0 0 0 3px #1d0c17, 0 8px 40px rgba(0,0,0,0.25);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      position: relative;
+      font-family: var(--font-family, 'Rebel Sans Text', sans-serif);
+      flex-shrink: 0;
+      transform-origin: center center;
+    }
+    .app-status-bar {
+      height: 54px;
+      padding: 14px 24px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .app-header {
+      display: flex;
+      align-items: center;
+      padding: 4px 16px 12px;
+      background: #fff;
+      flex-shrink: 0;
+    }
+    .app-header__close {
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .app-content {
+      flex: 1;
+      overflow-y: auto;
+      background: #fff;
+    }
+    .ride-details-hero {
+      padding: 16px 20px 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .ride-details-hero__info {}
+    .ride-details-hero__label {
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 600;
+      line-height: var(--text-title-f3-line-height, 19px);
+      color: var(--color-text-secondary, rgba(29,12,23,0.7));
+      margin-bottom: 4px;
+    }
+    .ride-details-hero__datetime {
+      font-family: var(--font-family);
+      font-size: var(--text-headline-f2-size, 24px);
+      font-weight: 700;
+      line-height: var(--text-headline-f2-line-height, 30px);
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .ride-details-hero__car {
+      width: 100px;
+      height: 56px;
+      object-fit: contain;
+    }
+    .keep-in-mind {
+      margin: 4px 16px 24px;
+      background: #fff;
+      border: 1px solid rgba(54,34,1,0.16);
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .keep-in-mind__title {
+      font-family: var(--font-family);
+      font-size: var(--text-title-f2-size, 15px);
+      font-weight: 600;
+      line-height: var(--text-title-f2-line-height, 21px);
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 14px;
+    }
+    .keep-in-mind__item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 5px 0;
+    }
+    .keep-in-mind__icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .keep-in-mind__text {
+      font-family: var(--font-family);
+      font-size: var(--text-body-f3-size, 13px);
+      font-weight: var(--text-body-f3-weight, 400);
+      line-height: var(--text-body-f3-line-height, 19px);
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .keep-in-mind__text strong { font-weight: 600; }
+    .r5-section-divider {
+      height: 8px;
+      background: rgba(54,34,1,0.07);
+      width: 100%;
+      flex-shrink: 0;
+    }
+    .trip-section {
+      padding: 20px 20px 0;
+    }
+    .trip-section__title {
+      font-family: var(--font-family);
+      font-size: var(--text-headline-f2-size, 24px);
+      font-weight: 700;
+      line-height: var(--text-headline-f2-line-height, 30px);
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 16px;
+    }
+    .trip-detail-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 4px 0 16px;
+    }
+    .trip-detail-row__icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .trip-detail-row__text {
+      font-family: var(--font-family);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 23px;
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .trip-detail-row__text small {
+      display: block;
+      font-size: 13px;
+      color: var(--text-tertiary, #888);
+      margin-top: 2px;
+    }
+    .trip-route {
+      padding: 0 16px 16px;
+      position: relative;
+    }
+    .trip-route__line {
+      position: absolute;
+      left: 26px;
+      top: 35px;
+      height: 52px;
+      width: 4px;
+      background: linear-gradient(to bottom, #820076, #cf0090);
+      border-radius: 2px;
+      z-index: 0;
+    }
+    .trip-route__stop {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      position: relative;
+      height: 64px;
+      padding: 0;
+      z-index: 1;
+    }
+    .trip-route__icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 0;
+    }
+    .trip-route__address {
+      font-family: var(--font-family);
+      font-size: 17px;
+      font-weight: 500;
+      line-height: 23px;
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .trip-route__label {
+      font-family: var(--font-family);
+      font-size: var(--text-body-f2-size, 15px);
+      font-weight: var(--text-body-f2-weight, 400);
+      line-height: var(--text-body-f2-line-height, 21px);
+      color: var(--color-text-tertiary, rgba(29,12,23,0.6));
+      margin-top: 2px;
+    }
+    .manage-section {
+      padding: 20px 20px 12px;
+    }
+    .manage-section__title {
+      font-family: var(--font-family);
+      font-size: var(--text-headline-f2-size, 24px);
+      font-weight: 700;
+      line-height: var(--text-headline-f2-line-height, 30px);
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 16px;
+    }
+    .cancel-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 0;
+      cursor: pointer;
+    }
+    .cancel-row__icon {
+      width: 24px;
+      height: 24px;
+    }
+    .cancel-row__icon .lpl-icon {
+      filter: brightness(0) saturate(100%) invert(14%) sepia(82%) saturate(4637%) hue-rotate(343deg) brightness(86%) contrast(96%);
+    }
+    .cancel-row__text {
+      font-family: var(--font-family);
+      font-size: var(--text-subtitle-f1-size, 17px);
+      font-weight: var(--text-subtitle-f1-weight, 500);
+      line-height: var(--text-subtitle-f1-line-height, 23px);
+      color: var(--color-text-negative, #c81534);
+    }
+    .contact-banner {
+      margin: 8px 16px 16px;
+      background: rgba(54,34,1,0.07);
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      min-height: 48px;
+    }
+    .contact-banner__icon {
+      width: 24px;
+      height: 24px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .contact-banner__text {
+      font-family: var(--font-family);
+      font-size: var(--text-body-f2-size, 15px);
+      font-weight: var(--text-body-f2-weight, 400);
+      line-height: var(--text-body-f2-line-height, 21px);
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .app-home-indicator {
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      flex-shrink: 0;
+    }
+    .app-home-indicator__bar {
+      width: 134px;
+      height: 5px;
+      border-radius: 3px;
+      background: #000;
+    }
+
+    /* ── Language Preference Bottom Sheet (LPL Sheet pattern) ── */
+    .lang-sheet-scrim {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .lang-sheet-scrim.visible {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .lang-sheet {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--color-surface-primary, #fff);
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 0 14px rgba(0,0,0,0.16), 0 0 1px rgba(0,0,0,0.12);
+      z-index: 51;
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      font-family: var(--font-family);
+    }
+    .lang-sheet.open {
+      transform: translateY(0);
+    }
+    .lang-sheet__handle {
+      width: 36px;
+      height: 4px;
+      border-radius: 9999px;
+      background: var(--color-stroke-secondary, rgba(29,12,23,0.45));
+      margin: 8px auto;
+      flex-shrink: 0;
+    }
+    .lang-sheet__close {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--color-surface-secondary, rgba(54,34,1,0.07));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: none;
+      padding: 0;
+      z-index: 1;
+      font-size: 0;
+      color: transparent;
+    }
+    .lang-sheet__close .lpl-icon { width: 16px; height: 16px; }
+    .lang-sheet__billboard {
+      padding: 16px 16px 0;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .lang-sheet__title {
+      font-family: var(--font-family);
+      font-weight: 700;
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .lang-sheet__message {
+      font-family: var(--font-family);
+      color: var(--color-text-primary, #1d0c17);
+    }
+    .lang-sheet__content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 16px 8px;
+    }
+    .lang-pref-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--color-stroke-tertiary, rgba(54,34,1,0.16));
+    }
+    .lang-pref-option:last-child { border-bottom: none; }
+    .lang-pref-option__info { flex: 1; padding-right: 16px; }
+    .lang-pref-option__title {
+      font-family: var(--font-family);
+      font-size: var(--text-subtitle-f2-size, 15px);
+      font-weight: 500;
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 2px;
+    }
+    .lang-pref-option__desc {
+      font-family: var(--font-family);
+      color: var(--color-text-secondary, rgba(29,12,23,0.7));
+    }
+    /* LPL Switch */
+    .ios-toggle {
+      width: 51px;
+      height: 31px;
+      border-radius: 16px;
+      background: var(--color-icon-tertiary, #a1989b);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.3s;
+      flex-shrink: 0;
+    }
+    .ios-toggle.on { background: var(--color-surface-interactive, #820076); }
+    .ios-toggle__thumb {
+      width: 27px;
+      height: 27px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: left 0.3s;
+    }
+    .ios-toggle.on .ios-toggle__thumb { left: 22px; }
+    /* LPL Footer button group */
+    .lang-sheet__footer {
+      padding: 8px 32px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      border-top: none;
+    }
+    .lang-sheet__cta {
+      width: 100%;
+      height: 48px;
+      padding: 0;
+      border-radius: 9999px;
+      background: var(--color-surface-interactive, #820076);
+      color: #fff;
+      font-family: var(--font-family);
+      font-size: var(--text-title-f1-size, 17px);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+    }
+    .lang-sheet__cta:active { opacity: 0.85; }
+    .lang-sheet__dismiss {
+      width: 100%;
+      height: 48px;
+      padding: 0;
+      border-radius: 9999px;
+      background: var(--color-surface-secondary, rgba(54,34,1,0.07));
+      color: var(--color-text-primary, #1d0c17);
+      font-family: var(--font-family);
+      font-size: var(--text-title-f1-size, 17px);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      text-align: center;
+    }
+    .lang-sheet__dismiss:active { opacity: 0.85; }
+
+    /* ── R5B Inline Language Card ── */
+    .lang-inline-card {
+      margin: 0 16px 16px;
+      background: var(--color-surface-secondary, rgba(54,34,1,0.07));
+      border-radius: 12px;
+      padding: 12px 16px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+    }
+    .lang-inline-card__icon {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 1px;
+    }
+    .lang-inline-card__body { flex: 1; }
+    .lang-inline-card__title {
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 600;
+      color: var(--color-text-primary, #1d0c17);
+      margin-bottom: 4px;
+    }
+    .lang-inline-card__toggles { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+    .lang-inline-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .lang-inline-toggle__label {
+      font-family: var(--font-family);
+      font-size: var(--text-body-f3-size, 13px);
+      font-weight: 400;
+      color: var(--color-text-primary, #1d0c17);
+      flex: 1;
+    }
+    .lang-inline-toggle .ios-toggle { width: 40px; height: 24px; border-radius: 12px; }
+    .lang-inline-toggle .ios-toggle__thumb { width: 20px; height: 20px; top: 2px; left: 2px; }
+    .lang-inline-toggle .ios-toggle.on .ios-toggle__thumb { left: 18px; }
+    .lang-inline-card__save {
+      margin-top: 10px;
+      width: 100%;
+      height: 36px;
+      border-radius: 9999px;
+      background: var(--color-surface-interactive, #820076);
+      color: #fff;
+      font-family: var(--font-family);
+      font-size: var(--text-title-f3-size, 13px);
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+    }
+    .lang-inline-card__save:active { opacity: 0.85; }
+
+    /* ── Rider Preferences Hint (C1 phone detection) ── */
+    .rider-prefs-hint {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      margin: 6px 0 12px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.35;
+    }
+    .rider-prefs-hint.visible { display: flex; }
+  </style>
+</head>
+<body>
+
+<!-- Screen Navigation -->
+<!-- Scrim for closing dropdowns -->
+<div class="proto-dropdown__scrim" id="dropdownScrim" onclick="closeAllDropdowns()"></div>
+
+<!-- Top Navigation Bar -->
+<nav class="proto-nav">
+  <div class="proto-nav__title">Language Matching</div>
+  <div class="proto-nav__divider"></div>
+
+  <!-- Coordinator dropdown -->
+  <div class="proto-dropdown" id="dd-coordinator">
+    <button class="proto-dropdown__trigger has-active" onclick="toggleDropdown('dd-coordinator')">
+      Coordinator
+      <span class="proto-dropdown__active-label" id="dd-coordinator-label">Booking Form Step 1</span>
+      <svg class="proto-dropdown__chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="proto-dropdown__menu" id="dd-coordinator-menu">
+      <button class="proto-dropdown__item active" onclick="navTo('c1', this, 'dd-coordinator', 'Booking Form Step 1')">
+        <span class="proto-dropdown__item-number">C1</span> Booking Form Step 1
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('c2', this, 'dd-coordinator', 'Booking Form Step 2')">
+        <span class="proto-dropdown__item-number">C2</span> Booking Form Step 2
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('c3', this, 'dd-coordinator', 'Looking for Drivers')">
+        <span class="proto-dropdown__item-number">C3</span> Looking for Drivers
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('c4', this, 'dd-coordinator', 'Driver Language Matched')">
+        <span class="proto-dropdown__item-number">C4</span> Driver Language Matched
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('c5', this, 'dd-coordinator', 'Driver Matched Fallback')">
+        <span class="proto-dropdown__item-number">C5</span> Driver Matched Fallback
+      </button>
+    </div>
+  </div>
+
+  <!-- Rider dropdown -->
+  <div class="proto-dropdown" id="dd-rider">
+    <button class="proto-dropdown__trigger" onclick="toggleDropdown('dd-rider')">
+      Rider
+      <span class="proto-dropdown__active-label" id="dd-rider-label"></span>
+      <svg class="proto-dropdown__chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="proto-dropdown__menu" id="dd-rider-menu">
+      <button class="proto-dropdown__item" onclick="navTo('r1', this, 'dd-rider', 'Ride Request')">
+        <span class="proto-dropdown__item-number">R1</span> Ride Request
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('r2', this, 'dd-rider', 'Driver En Route Language Matched')">
+        <span class="proto-dropdown__item-number">R2</span> Driver En Route Language Matched
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('r3', this, 'dd-rider', 'Driver En Route Match Fallback')">
+        <span class="proto-dropdown__item-number">R3</span> Driver En Route Match Fallback
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('r4', this, 'dd-rider', 'Push Notification')">
+        <span class="proto-dropdown__item-number">R4</span> Push Notification
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('r5', this, 'dd-rider', 'Ride Details + Language Prompt')">
+        <span class="proto-dropdown__item-number">R5</span> Ride Details + Language Prompt
+      </button>
+      <button class="proto-dropdown__item" onclick="navTo('r5b', this, 'dd-rider', 'Ride Details + Inline Language')" style="display:none;">
+        <span class="proto-dropdown__item-number">R5B</span> Ride Details + Inline Language
+      </button>
+    </div>
+  </div>
+
+  <!-- Admin dropdown (hidden for hackathon demo) -->
+  <!--
+  <div class="proto-dropdown" id="dd-admin">
+    <button class="proto-dropdown__trigger" onclick="toggleDropdown('dd-admin')">
+      Admin
+      <span class="proto-dropdown__active-label" id="dd-admin-label"></span>
+      <svg class="proto-dropdown__chevron" viewBox="0 0 10 6" fill="none"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="proto-dropdown__menu" id="dd-admin-menu">
+      <button class="proto-dropdown__item" onclick="navTo('a1', this, 'dd-admin', 'Program View')">
+        <span class="proto-dropdown__item-number">A1</span> Program View
+      </button>
+    </div>
+  </div>
+  -->
+</nav>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- C-1: Booking Form — Language Preference    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-c1" style="position:relative;">
+  <!-- Header -->
+  <div class="concierge-header">
+    <div class="concierge-logo">
+      <img src="assets/logos/LyftConciergeLogo.svg" alt="Lyft Concierge" height="28">
+    </div>
+    <div class="header-right">
+      <div class="search"><span class="lpl-icon lpl-icon--search" style="filter:brightness(0) invert(1);"></span> Search</div>
+      <div class="profile-btn">Starfleet Health <div class="profile-icon"><span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span></div></div>
+    </div>
+  </div>
+  <!-- Nav -->
+  <div class="concierge-nav">
+    <button class="nav-request active">Request</button>
+    <div class="nav-tab">All rides</div>
+    <div class="nav-tab">Active</div>
+    <div class="nav-tab">Upcoming</div>
+    <div class="nav-tab">Notifications</div>
+  </div>
+  <!-- Body -->
+  <div class="concierge-body">
+    <div class="sidebar">
+      <div class="sidebar-content">
+        <div class="page-title">Start ride request</div>
+
+        <div class="form-section">
+          <div class="form-section-title">Enter rider details</div>
+          <div class="input-row input-row--full">
+            <div class="field-wrapper field-wrapper--input">
+              <input type="text" class="field-input" id="c1-first-name" placeholder=" " data-lpignore="true" data-form-type="other" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+              <label class="field-input-label" for="c1-first-name">First name*</label>
+            </div>
+            <div class="field-wrapper field-wrapper--input">
+              <input type="text" class="field-input" id="c1-last-name" placeholder=" " data-lpignore="true" data-form-type="other" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+              <label class="field-input-label" for="c1-last-name">Last name*</label>
+            </div>
+          </div>
+          <div class="field-wrapper field-wrapper--input" id="c1-phone-field" style="margin-bottom:16px;">
+            <input type="tel" class="field-input" id="c1-phone" placeholder=" " data-lpignore="true" data-form-type="other" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')" oninput="formatPhone(this); checkRiderPrefs(this)">
+            <label class="field-input-label" for="c1-phone">Rider's mobile phone number*</label>
+          </div>
+          <!-- Rider app preferences hint (shown for 484 numbers) -->
+          <div class="rider-prefs-hint" id="c1-rider-prefs-banner">
+            <span class="lpl-icon lpl-icon--info-knockout" style="flex-shrink:0; width:16px; height:16px; color:var(--icon-secondary);"></span>
+            <span>Spanish preference detected. Language selection updated automatically.</span>
+          </div>
+          <!-- Language settings -->
+          <div class="form-section-title">Language settings</div>
+          <div class="field-wrapper field-wrapper--select" id="c1-lang-wrapper">
+            <label class="field-input-label field-input-label--select">Send texts in this language</label>
+            <select class="field-select" id="c1-language">
+              <option value="en" selected>English</option>
+              <option value="es">Spanish</option>
+              <option value="pt">Portuguese</option>
+              <option value="fr">French</option>
+              <option value="zh">Chinese</option>
+            </select>
+            <span class="lpl-icon lpl-icon--chevron-down" style="position:absolute; right:16px; top:50%; transform:translateY(-50%); pointer-events:none;"></span>
+          </div>
+          <div class="info-text" id="c1-lang-info">
+            <span class="lpl-icon lpl-icon--info-knockout" style="flex-shrink:0; width:16px; height:16px; opacity:0.7;"></span>
+            <span id="c1-lang-info-text">Text notifications will be sent to the rider in English.</span>
+          </div>
+
+          <!-- Language Match Card -->
+          <div class="lang-match-card" id="c1-lang-match-card">
+            <div class="lang-match-header">
+              <div class="lang-match-info">
+                <div class="lang-match-title">Driver language match</div>
+                <div class="lang-match-desc" id="c1-lang-match-desc">Request a <span id="c1-match-lang-name">Spanish</span>-speaking driver.</div>
+              </div>
+              <div class="lang-match-toggle">
+                <div class="switch" id="c1-lang-match-switch" onclick="toggleLangMatch()">
+                  <div class="switch__thumb"></div>
+                </div>
+              </div>
+            </div>
+            <div class="lang-match-body" id="c1-lang-match-body">
+              <div class="lang-match-body__divider"></div>
+              <div class="lang-match-body__label">
+                How long to wait for a language match?
+              </div>
+              <div class="wait-options">
+                <button class="wait-option" onclick="selectWait(this)">3 min</button>
+                <button class="wait-option active" onclick="selectWait(this)">5 min</button>
+                <button class="wait-option" onclick="selectWait(this)">10 min</button>
+                <button class="wait-option" onclick="selectWait(this)">15 min</button>
+              </div>
+              <div style="margin:16px 0 0;display:flex;align-items:flex-start;gap:8px;">
+                <span class="lpl-icon lpl-icon--xs lpl-icon--info-knockout" style="width:16px;height:16px;flex-shrink:0;opacity:0.7;margin-top:1px;"></span>
+                <div style="font-size:13px;color:var(--text-secondary);line-height:1.4;">If no match is found in <span id="c1-match-wait-time">5</span> minutes, the next available driver will be dispatched.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="form-section-title">Enter pickup and drop-off addresses</div>
+          <div class="address-field icon-color-purple">
+            <span class="lpl-icon lpl-icon--map-point-waypoint" style="width:24px; height:24px; flex-shrink:0;"></span>
+            <input type="text" class="address-input" id="c1-pickup" placeholder="Pickup address*" data-lpignore="true" data-form-type="other" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+          </div>
+          <div class="address-field icon-color-pink">
+            <span class="lpl-icon lpl-icon--map-point-waypoint" style="width:24px; height:24px; flex-shrink:0;"></span>
+            <input type="text" class="address-input" id="c1-dropoff" placeholder="Drop-off address*" data-lpignore="true" data-form-type="other" autocomplete="new-password" readonly onfocus="this.removeAttribute('readonly')">
+          </div>
+          <div class="cost-text" id="c1-cost" style="display:none;">$8.87 / 1.48 miles</div>
+        </div>
+
+        <div class="expandable-row">
+          <span class="expandable-row__title">Share ride info with others (optional)</span>
+          <span class="expandable-row__action">Open</span>
+        </div>
+        <div class="expandable-row">
+          <span class="expandable-row__title">Enter note for driver (optional)</span>
+          <span class="expandable-row__action">Open</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="inline-card">
+          <div class="inline-card__icon"><span class="lpl-icon lpl-icon--document"></span></div>
+          <div class="inline-card__body">
+            <div class="inline-card__title">Have many rides to request?</div>
+            <div class="inline-card__detail">Upload a CSV or TSV file instead.</div>
+            <div class="inline-card__link"><span class="lpl-icon lpl-icon--upload" style="width:16px; height:16px; filter: brightness(0) saturate(100%) invert(10%) sepia(100%) saturate(7000%) hue-rotate(299deg) brightness(80%) contrast(115%);"></span> Bulk request rides</div>
+          </div>
+        </div>
+      </div>
+      <div class="sticky-footer">
+        <button class="btn btn--primary" style="width:100%;" onclick="navTo('c2', document.querySelectorAll('.proto-dropdown__item')[1], 'dd-coordinator', 'Booking Form Step 2')">
+          Ride details <span class="lpl-icon lpl-icon--arrow-right" style="width:20px; height:20px; filter:brightness(0) invert(1);"></span>
+        </button>
+      </div>
+    </div>
+    <div class="map-area">
+      <div id="map-c1" class="leaflet-map"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- C-2: Booking Form — Wait-Time Selector     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-c2" style="display:none;">
+  <div class="concierge-header">
+    <div class="concierge-logo"><img src="assets/logos/LyftConciergeLogo.svg" alt="Lyft Concierge" height="28"></div>
+    <div class="header-right">
+      <div class="search"><span class="lpl-icon lpl-icon--search" style="filter:brightness(0) invert(1);"></span> Search</div>
+      <div class="profile-btn">Starfleet Health <div class="profile-icon"><span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span></div></div>
+    </div>
+  </div>
+  <div class="concierge-nav">
+    <button class="nav-request active">Request</button>
+    <div class="nav-tab">All rides</div>
+    <div class="nav-tab">Active</div>
+    <div class="nav-tab">Upcoming</div>
+    <div class="nav-tab">Notifications</div>
+  </div>
+  <div class="concierge-body">
+    <div class="sidebar">
+      <div class="sidebar-content">
+        <div class="page-title">Set up a ride for <span class="rider-name-dynamic">Jessica Bird</span></div>
+
+        <!-- Date & Time -->
+        <div class="form-section">
+          <div class="form-section-title">Select date and time:</div>
+          <div class="radio-group">
+            <div class="radio-item">
+              <div class="radio-circle selected"></div>
+              <div><div class="radio-label">Now</div></div>
+            </div>
+            <div class="radio-item">
+              <div class="radio-circle"></div>
+              <div>
+                <div class="radio-label">Flexible</div>
+                <div class="radio-desc">The rider requests a ride anytime on the day you select. <a href="#">Learn more</a></div>
+              </div>
+            </div>
+            <div class="radio-item">
+              <div class="radio-circle"></div>
+              <div>
+                <div class="radio-label">Schedule</div>
+                <div class="radio-desc">Set when the rider should be picked up.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language match settings moved to C-1 -->
+
+        <!-- Ride Type -->
+        <div class="form-section" style="margin-top: 24px;">
+          <div class="form-section-title">Select Lyft ride type</div>
+          <div class="ride-type-row">
+            <div class="ride-type-img"><img src="assets/mode illustrations/Type=LyftStandard.svg" alt="Standard"></div>
+            <div class="ride-type-info">
+              <div class="ride-type-name">Standard  &nbsp;<span class="lpl-icon lpl-icon--xs lpl-icon--single-passenger-fill" style="display:inline-block;vertical-align:middle;margin:-2px 2px 0 0;opacity:0.7;"></span><span style="color:var(--text-secondary);">4</span></div>
+              <div class="ride-type-detail">Any vehicle size</div>
+            </div>
+          </div>
+          <div class="ride-sub selected" data-price="13.74" onclick="selectRideSub(this)">
+            <div>
+              <div style="font-size:16px; color:var(--text-primary);">within 15 min</div>
+              <div style="font-size:14px; color:var(--text-secondary);">Wait & Save</div>
+            </div>
+            <div class="ride-type-price">
+              <div class="ride-type-price__amount">$13.74</div>
+              <div class="ride-type-price__eta">1:05 PM - 1:12 PM</div>
+            </div>
+          </div>
+          <div class="ride-sub" data-price="14.77" onclick="selectRideSub(this)">
+            <div>
+              <div style="font-size:16px; color:var(--text-primary);">in 3 min</div>
+              <div style="font-size:14px; color:var(--text-secondary);">Standard</div>
+            </div>
+            <div class="ride-type-price">
+              <div class="ride-type-price__amount">$14.77</div>
+              <div class="ride-type-price__eta">1:06 PM</div>
+            </div>
+          </div>
+
+          <div class="ride-type-row" data-price="14.77" onclick="selectRideType(this)">
+            <div class="ride-type-img"><img src="assets/mode illustrations/Type=Easy Step-In.svg" alt="Easy Step-In"></div>
+            <div class="ride-type-info">
+              <div class="ride-type-name">Easy Step-In  &nbsp;<span class="lpl-icon lpl-icon--xs lpl-icon--single-passenger-fill" style="display:inline-block;vertical-align:middle;margin:-2px 2px 0 0;opacity:0.7;"></span><span style="color:var(--text-secondary);">4</span></div>
+              <div class="ride-type-badge">New</div>
+              <div class="ride-type-detail">in 5 min</div>
+            </div>
+            <div class="ride-type-price">
+              <div class="ride-type-price__amount">$14.77</div>
+              <div class="ride-type-price__eta">1:06 PM</div>
+            </div>
+          </div>
+
+          <div class="ride-type-row" data-price="18.77" onclick="selectRideType(this)">
+            <div class="ride-type-img"><img src="assets/mode illustrations/Type=Assisted.svg" alt="Assisted"></div>
+            <div class="ride-type-info">
+              <div class="ride-type-name">Assisted  &nbsp;<span class="lpl-icon lpl-icon--xs lpl-icon--single-passenger-fill" style="display:inline-block;vertical-align:middle;margin:-2px 2px 0 0;opacity:0.7;"></span><span style="color:var(--text-secondary);">4</span></div>
+              <div class="ride-type-detail">in 10 min</div>
+            </div>
+            <div class="ride-type-price">
+              <div class="ride-type-price__amount">$18.77</div>
+              <div class="ride-type-price__eta">1:06 PM</div>
+            </div>
+          </div>
+
+          <div style="padding: 12px 16px;">
+            <div style="font-size:13px; color:var(--text-secondary);">Displayed price is an estimate; actual price may vary.</div>
+            <div style="font-size:14px; color:var(--text-interactive); font-weight:500; margin-top:4px; cursor:pointer;">View additional options</div>
+          </div>
+        </div>
+
+        <!-- Tip -->
+        <div class="form-section">
+          <div class="form-section-title">Select tip amount</div>
+          <div class="tip-selector">
+            <button class="tip-option active" data-tip="2.06" onclick="selectTip(this)"><span class="tip-option__pct">15%</span><span class="tip-option__amt">$2.06</span></button>
+            <button class="tip-option" data-tip="2.75" onclick="selectTip(this)"><span class="tip-option__pct">20%</span><span class="tip-option__amt">$2.75</span></button>
+            <button class="tip-option" data-tip="3.44" onclick="selectTip(this)"><span class="tip-option__pct">25%</span><span class="tip-option__amt">$3.44</span></button>
+            <button class="tip-option" data-tip="0" onclick="selectTip(this)"><span class="tip-option__pct">Custom</span></button>
+          </div>
+          <div style="font-size:13px; color:var(--text-secondary); margin-top:8px; line-height:18px;">
+            Drivers will see this tip when accepting the ride. 100% of tips go to the driver and can't be lowered once the ride is activated.
+          </div>
+        </div>
+      </div>
+      <div class="sticky-footer">
+        <div class="sticky-footer__legal">
+          By selecting "Request ride," I'm certifying that I have the rider's consent for Lyft to use their information and to send SMS messages (rates may apply) for the ride.
+        </div>
+        <div class="btn-row">
+          <button class="btn btn--secondary" style="flex:none;width:auto;min-width:140px;padding:0 24px;" onclick="navTo('c1', document.querySelectorAll('.proto-dropdown__item')[0], 'dd-coordinator', 'Booking Form Step 1')">Back</button>
+          <button class="btn btn--primary" style="flex:1;min-width:0;" onclick="navTo('c3', document.querySelectorAll('.proto-dropdown__item')[2], 'dd-coordinator', 'Looking for Drivers')">Request ride</button>
+        </div>
+      </div>
+    </div>
+    <div class="map-area">
+      <div id="map-c2" class="leaflet-map"></div>
+      <div class="map-price-pill" id="c2-map-pill" style="position:absolute;top:16px;left:16px;z-index:1000;background:rgba(29,12,23,0.8);color:#fff;border-radius:16px;padding:16px;font-size:16px;font-weight:600;font-family:var(--font-text);white-space:nowrap;backdrop-filter:blur(8px);letter-spacing:0.01em;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- C-3: Active Rides — Looking for Match      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-c3" style="display:none;">
+  <div class="concierge-header">
+    <div class="concierge-logo"><img src="assets/logos/LyftConciergeLogo.svg" alt="Lyft Concierge" height="28"></div>
+    <div class="header-right">
+      <div class="search"><span class="lpl-icon lpl-icon--search" style="filter:brightness(0) invert(1);"></span> Search</div>
+      <div class="profile-btn">Starfleet Health <div class="profile-icon"><span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span></div></div>
+    </div>
+  </div>
+  <div class="concierge-nav">
+    <button class="nav-request">Request</button>
+    <div class="nav-tab">All rides</div>
+    <div class="nav-tab active">Active</div>
+    <div class="nav-tab">Upcoming</div>
+    <div class="nav-tab">Notifications</div>
+  </div>
+  <div class="concierge-body">
+    <!-- Left sidebar: ride list -->
+    <div class="sidebar" style="padding:0; overflow-y:auto;">
+      <div class="ride-list-item selected">
+        <div class="ride-list-item__icon"><span class="lpl-icon lpl-icon--search-vehicle"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name rider-name-dynamic">Jessica Bird</div>
+            <div class="ride-list-item__date">Apr 13, 1:06 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Looking for drivers</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">David Chen</div>
+            <div class="ride-list-item__date">Apr 13, 12:30 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting picked up in 5 min</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple-50"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Maria Santos</div>
+            <div class="ride-list-item__date">Apr 13, 11:45 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Driver is waiting for rider</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-pink"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Anh Nguyen</div>
+            <div class="ride-list-item__date">Apr 13, 11:00 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting dropped off in 10 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Map + Toast + Expanded ride card -->
+    <div class="map-area">
+      <div id="map-c3" class="leaflet-map"></div>
+
+      <!-- Toast notification -->
+      <div class="concierge-toast" id="toast-c3" style="left:auto; right:16px; width:auto; max-width:320px;">
+        <div class="toast-icon"><span class="lpl-icon lpl-icon--checkmark" style="filter:brightness(0) invert(1);"></span></div>
+        <div class="toast-text">Ride requested for <span class="rider-name-dynamic">Jessica Bird</span>!</div>
+      </div>
+
+      <!-- Expanded ride card -->
+      <div class="ride-card">
+        <div class="ride-card__sticky-group">
+          <!-- Language match indicator (Panel Banner) — sits above header -->
+          <div class="language-match-bar">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--translate-fill"></span>
+            Looking for a Spanish-speaking driver &middot; Wait time <span id="c3-banner-timer">5:00</span> remaining
+          </div>
+
+          <!-- Card header: Looking state -->
+          <div class="ride-card__header" style="min-height:88px;">
+            <div class="ride-card__info">
+              <div class="ride-card__title ride-card__title--primary">Looking for nearby drivers</div>
+            </div>
+            <div class="ride-card__actions">
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--vertical-menu"></span></button>
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down"></span></button>
+            </div>
+          </div>
+          <div class="gradient-loader"><div class="gradient-loader__bar"></div></div>
+
+          <!-- Tabs -->
+          <div class="ride-card__tabs">
+            <div class="ride-card__tab active">Ride details</div>
+            <div class="ride-card__tab">Driver chat</div>
+          </div>
+        </div>
+
+        <!-- Rider section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--single-passenger"></span> Rider
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Full name</div>
+              <div class="ride-card__field-value rider-name-dynamic">Jessica Bird</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Mobile number</div>
+              <div class="ride-card__field-value rider-phone-dynamic">(123) 456-7890</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Ride type</div>
+              <div class="ride-card__field-value">Lyft (4 seats)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--route"></span> Route
+          </div>
+          <div class="ride-card__address waypoint-pickup">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Pickup</div>
+              <div class="ride-card__field-value">185 Berry St, San Francisco, CA</div>
+            </div>
+          </div>
+          <div class="ride-card__address waypoint-dropoff">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Drop-off</div>
+              <div class="ride-card__field-value">UCSF Parnassus</div>
+            </div>
+          </div>
+          <div class="ride-card__address-note">Addresses may vary from the original request due to minor pickup and drop-off changes.</div>
+        </div>
+
+        <!-- Request details section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--document"></span> Request details
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Coordinator name</div>
+              <div class="ride-card__field-value">Glen Hunter</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Requested date and time</div>
+              <div class="ride-card__field-value">4/13/26, 1:06 PM PDT</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Language preference</div>
+              <div class="ride-card__field-value">Spanish (10 min wait)</div>
+            </div>
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Internal note (optional)</div>
+              <div class="ride-card__field-value">No note added</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- C-4: Active Rides — Language Match Found    -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-c4" style="display:none;">
+  <div class="concierge-header">
+    <div class="concierge-logo"><img src="assets/logos/LyftConciergeLogo.svg" alt="Lyft Concierge" height="28"></div>
+    <div class="header-right">
+      <div class="search"><span class="lpl-icon lpl-icon--search" style="filter:brightness(0) invert(1);"></span> Search</div>
+      <div class="profile-btn">Starfleet Health <div class="profile-icon"><span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span></div></div>
+    </div>
+  </div>
+  <div class="concierge-nav">
+    <button class="nav-request">Request</button>
+    <div class="nav-tab">All rides</div>
+    <div class="nav-tab active">Active</div>
+    <div class="nav-tab">Upcoming</div>
+    <div class="nav-tab">Notifications</div>
+  </div>
+  <div class="concierge-body">
+    <!-- Left sidebar: ride list -->
+    <div class="sidebar" style="padding:0; overflow-y:auto;">
+      <div class="ride-list-item selected">
+        <div class="ride-list-item__icon icon-color-purple"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name rider-name-dynamic">Jessica Bird</div>
+            <div class="ride-list-item__date">Apr 13, 1:06 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting picked up in 5 min</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">David Chen</div>
+            <div class="ride-list-item__date">Apr 13, 12:30 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting picked up in 5 min</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple-50"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Maria Santos</div>
+            <div class="ride-list-item__date">Apr 13, 11:45 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Driver is waiting for rider</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-pink"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Anh Nguyen</div>
+            <div class="ride-list-item__date">Apr 13, 11:00 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting dropped off in 10 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Map + Expanded ride card -->
+    <div class="map-area">
+      <div id="map-c4" class="leaflet-map"></div>
+
+      <!-- Expanded ride card -->
+      <div class="ride-card">
+        <div class="ride-card__sticky-group">
+          <!-- Language match success indicator (Panel Banner) — sits above header -->
+          <div class="language-match-bar">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--translate-fill"></span>
+            Spanish-speaking driver matched
+          </div>
+
+          <!-- Card header: Driver arriving -->
+          <div class="ride-card__header">
+            <div class="ride-card__car">
+              <img src="assets/cars/chevy-malibu-white.png" alt="White Chevy Malibu" style="width:109px;height:auto;object-fit:contain;">
+              <img src="assets/drivers/Driver-Avatar-Marcus.png" alt="Marcus" class="ride-card__driver-avatar" style="padding:0;">
+            </div>
+            <div class="ride-card__info">
+              <div class="ride-card__title ride-card__title--indigo">Marcus is arriving at pickup in 6 min</div>
+              <div class="ride-card__subtitle">White Chevy Malibu &bull; 7XYZ123</div>
+            </div>
+            <div class="ride-card__actions">
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--vertical-menu"></span></button>
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down"></span></button>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="ride-card__tabs">
+            <div class="ride-card__tab active">Ride details</div>
+            <div class="ride-card__tab">Driver chat</div>
+          </div>
+        </div>
+
+        <!-- Rider section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--single-passenger"></span> Rider
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Full name</div>
+              <div class="ride-card__field-value rider-name-dynamic">Jessica Bird</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Mobile number</div>
+              <div class="ride-card__field-value rider-phone-dynamic">(123) 456-7890</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Ride type</div>
+              <div class="ride-card__field-value">Lyft (4 seats)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--route"></span> Route
+          </div>
+          <div class="ride-card__address waypoint-pickup">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Pickup</div>
+              <div class="ride-card__field-value">185 Berry St, San Francisco, CA</div>
+            </div>
+          </div>
+          <div class="ride-card__address waypoint-dropoff">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Drop-off</div>
+              <div class="ride-card__field-value">UCSF Parnassus</div>
+            </div>
+          </div>
+          <div class="ride-card__address-note">Addresses may vary from the original request due to minor pickup and drop-off changes.</div>
+        </div>
+
+        <!-- Driver section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--steering-wheel"></span> Driver
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Name</div>
+              <div class="ride-card__field-value">Marcus</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Make and model</div>
+              <div class="ride-card__field-value">White Chevy Malibu</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">License plate</div>
+              <div class="ride-card__field-value">7XYZ123</div>
+            </div>
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Language matching</div>
+              <div class="ride-card__field-value">Speaks Spanish</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Note to driver</div>
+              <div class="ride-card__field-value">No note added</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request details section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--document"></span> Request details
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Coordinator name</div>
+              <div class="ride-card__field-value">Glen Hunter</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Requested date and time</div>
+              <div class="ride-card__field-value">4/13/26, 1:06 PM PDT</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Language match</div>
+              <div class="ride-card__field-value">Matched in 2m 18s</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- C-5: Active Rides — No Language Match       -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-c5" style="display:none;">
+  <div class="concierge-header">
+    <div class="concierge-logo"><img src="assets/logos/LyftConciergeLogo.svg" alt="Lyft Concierge" height="28"></div>
+    <div class="header-right">
+      <div class="search"><span class="lpl-icon lpl-icon--search" style="filter:brightness(0) invert(1);"></span> Search</div>
+      <div class="profile-btn">Starfleet Health <div class="profile-icon"><span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span></div></div>
+    </div>
+  </div>
+  <div class="concierge-nav">
+    <button class="nav-request">Request</button>
+    <div class="nav-tab">All rides</div>
+    <div class="nav-tab active">Active</div>
+    <div class="nav-tab">Upcoming</div>
+    <div class="nav-tab">Notifications</div>
+  </div>
+  <div class="concierge-body">
+    <!-- Left sidebar: ride list -->
+    <div class="sidebar" style="padding:0; overflow-y:auto;">
+      <div class="ride-list-item selected">
+        <div class="ride-list-item__icon icon-color-purple"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name rider-name-dynamic">Jessica Bird</div>
+            <div class="ride-list-item__date">Apr 13, 1:06 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting picked up in 3 min</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">David Chen</div>
+            <div class="ride-list-item__date">Apr 13, 12:30 PM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting picked up in 5 min</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-purple-50"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Maria Santos</div>
+            <div class="ride-list-item__date">Apr 13, 11:45 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Driver is waiting for rider</div>
+        </div>
+      </div>
+      <div class="ride-list-item">
+        <div class="ride-list-item__icon icon-color-pink"><span class="lpl-icon lpl-icon--map-point-waypoint"></span></div>
+        <div class="ride-list-item__content">
+          <div>
+            <div class="ride-list-item__name">Anh Nguyen</div>
+            <div class="ride-list-item__date">Apr 13, 11:00 AM PDT</div>
+          </div>
+          <div class="ride-list-item__status">Getting dropped off in 10 min</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Map + Expanded ride card -->
+    <div class="map-area">
+      <div id="map-c5" class="leaflet-map"></div>
+
+      <!-- Expanded ride card -->
+      <div class="ride-card">
+        <div class="ride-card__sticky-group">
+          <!-- Language match fallback indicator (Panel Banner) — sits above header -->
+          <div class="language-match-bar">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--translate-fill"></span>
+            No Spanish-speaking driver found. Next best available driver dispatched.
+          </div>
+
+          <!-- Card header: Driver arriving (fallback) -->
+          <div class="ride-card__header">
+            <div class="ride-card__car">
+              <img src="assets/cars/honda-civic-gold.png" alt="Black Honda Civic" style="width:109px;height:auto;object-fit:contain;">
+              <img src="assets/drivers/Driver-Avatar-Erica.png" alt="Erica" class="ride-card__driver-avatar" style="padding:0;">
+            </div>
+            <div class="ride-card__info">
+              <div class="ride-card__title ride-card__title--indigo">Erica is arriving at pickup in 3 min</div>
+              <div class="ride-card__subtitle">Black Honda Civic &bull; 8ABC456</div>
+            </div>
+            <div class="ride-card__actions">
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--vertical-menu"></span></button>
+              <button class="ride-card__action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down"></span></button>
+            </div>
+          </div>
+
+          <!-- Tabs -->
+          <div class="ride-card__tabs">
+            <div class="ride-card__tab active">Ride details</div>
+            <div class="ride-card__tab">Driver chat</div>
+          </div>
+        </div>
+
+        <!-- Rider section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--single-passenger"></span> Rider
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Full name</div>
+              <div class="ride-card__field-value rider-name-dynamic">Jessica Bird</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Mobile number</div>
+              <div class="ride-card__field-value rider-phone-dynamic">(123) 456-7890</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Ride type</div>
+              <div class="ride-card__field-value">Lyft (4 seats)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Route section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--route"></span> Route
+          </div>
+          <div class="ride-card__address waypoint-pickup">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Pickup</div>
+              <div class="ride-card__field-value">185 Berry St, San Francisco, CA</div>
+            </div>
+          </div>
+          <div class="ride-card__address waypoint-dropoff">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--map-point-waypoint" style="width:16px;height:16px;flex-shrink:0;"></span>
+            <div class="ride-card__field--full">
+              <div class="ride-card__field-label">Drop-off</div>
+              <div class="ride-card__field-value">UCSF Parnassus</div>
+            </div>
+          </div>
+          <div class="ride-card__address-note">Addresses may vary from the original request due to minor pickup and drop-off changes.</div>
+        </div>
+
+        <!-- Driver section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--steering-wheel"></span> Driver
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Name</div>
+              <div class="ride-card__field-value">Erica</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Make and model</div>
+              <div class="ride-card__field-value">Black Honda Civic</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">License plate</div>
+              <div class="ride-card__field-value">8ABC456</div>
+            </div>
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Language matching</div>
+              <div class="ride-card__field-value">English only</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Note to driver</div>
+              <div class="ride-card__field-value">No note added</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Request details section -->
+        <div class="ride-card__section">
+          <div class="ride-card__section-title">
+            <span class="lpl-icon lpl-icon--document"></span> Request details
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Coordinator name</div>
+              <div class="ride-card__field-value">Glen Hunter</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Requested date and time</div>
+              <div class="ride-card__field-value">4/13/26, 1:06 PM PDT</div>
+            </div>
+            <div class="ride-card__field">
+              <div class="ride-card__field-label">Language match</div>
+              <div class="ride-card__field-value" style="color:var(--text-negative);">No match (5 min expired)</div>
+            </div>
+          </div>
+          <div class="ride-card__row">
+            <div class="ride-card__field" style="width:auto;">
+              <div class="ride-card__field-label">SMS language</div>
+              <div class="ride-card__field-value">Rider will still receive texts in Spanish</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- A-1: Admin — Programs / Ride History        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="admin-shell" id="shell-a1" style="display:none;">
+  <!-- Left sidebar -->
+  <div class="admin-sidebar">
+    <div class="admin-sidebar__logo"><img src="assets/logos/LyftLogo.svg" alt="Lyft" height="28"> <span style="color:rgba(255,255,255,0.5);font-size:14px;font-weight:500;margin-left:6px;align-self:center;">Starfleet Health</span></div>
+    <nav class="admin-sidebar__nav">
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--home" style="filter:brightness(0) invert(1);"></span> Home</a>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--bank-card" style="filter:brightness(0) invert(1);"></span> Business Profiles</a>
+      <div class="admin-nav-group">
+        <a class="admin-nav-item admin-nav-item--open"><span class="lpl-icon lpl-icon--steering-wheel" style="filter:brightness(0) invert(1);"></span> Concierge <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-up" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+        <div class="admin-nav-sub">
+          <a class="admin-nav-subitem">Overview</a>
+          <a class="admin-nav-subitem admin-nav-subitem--active">Programs</a>
+          <a class="admin-nav-subitem">Reports</a>
+          <a class="admin-nav-subitem">Expense Info</a>
+        </div>
+      </div>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--promos" style="filter:brightness(0) invert(1);"></span> Lyft Pass <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+      <div class="admin-nav-divider"></div>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--chart" style="filter:brightness(0) invert(1);"></span> Insights <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--single-passenger" style="filter:brightness(0) invert(1);"></span> People <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--document" style="filter:brightness(0) invert(1);"></span> Billing <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+      <div class="admin-nav-divider"></div>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--settings" style="filter:brightness(0) invert(1);"></span> Settings <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-down" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+      <a class="admin-nav-item"><span class="lpl-icon lpl-icon--info-knockout" style="filter:brightness(0) invert(1);"></span> Help Center <span class="lpl-icon lpl-icon--xs lpl-icon--external-link" style="filter:brightness(0) invert(1);margin-left:auto;"></span></a>
+    </nav>
+    <div class="admin-sidebar__user">
+      <span class="lpl-icon lpl-icon--profile" style="filter:brightness(0) invert(1);"></span> Niko Miles <span class="lpl-icon lpl-icon--xs lpl-icon--chevron-up" style="filter:brightness(0) invert(1);margin-left:auto;"></span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="admin-main">
+    <!-- Breadcrumb -->
+    <div class="admin-breadcrumb">
+      <span>Concierge</span> <span style="color:var(--text-tertiary);margin:0 4px;">›</span> <span>Programs</span>
+    </div>
+
+    <!-- Title row -->
+    <div class="admin-title-row">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <h1 class="admin-page-title">Dialysis Transportation</h1>
+        <span class="admin-badge-live">Live</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <button class="admin-icon-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--vertical-menu"></span></button>
+        <button class="admin-send-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--send" style="filter:brightness(0) invert(1);"></span> Send rides</button>
+      </div>
+    </div>
+
+    <!-- Metric cards -->
+    <div class="admin-metrics">
+      <div class="admin-metric">
+        <div class="admin-metric__label">Total spend</div>
+        <div class="admin-metric__value">$4,289</div>
+      </div>
+      <div class="admin-metric">
+        <div class="admin-metric__label">Rides sent</div>
+        <div class="admin-metric__value">2,326</div>
+      </div>
+      <div class="admin-metric">
+        <div class="admin-metric__label">Rides completed</div>
+        <div class="admin-metric__value">1,932</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="admin-tabs">
+      <div class="admin-tab">Program overview</div>
+      <div class="admin-tab admin-tab--active">Ride history</div>
+      <div class="admin-tab">Administrators</div>
+    </div>
+
+    <!-- Ride history content -->
+    <div class="admin-content">
+      <!-- Table -->
+      <div class="history-table-wrap">
+        <div class="history-table-toolbar">
+          <div class="history-table-search">
+            <span class="lpl-icon lpl-icon--xs lpl-icon--search"></span>
+            Search by name or I.D.
+          </div>
+          <div class="history-table-actions">
+            <button class="history-table-action-btn"><span class="lpl-icon lpl-icon--xs lpl-icon--download"></span> Export</button>
+            <div style="position:relative;">
+              <button class="history-table-action-btn" onclick="document.getElementById('filter-dropdown').classList.toggle('open')"><span class="lpl-icon lpl-icon--xs lpl-icon--settings"></span> Filters</button>
+              <div id="filter-dropdown" class="filter-dropdown">
+                <label class="filter-dropdown__item"><input type="checkbox" checked> All rides</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Language matching</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Match status</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Ride status</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Language</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Date range</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Match time</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Cost range</label>
+                <label class="filter-dropdown__item"><input type="checkbox"> Program</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="history-table-scroll">
+          <table class="history-table">
+            <thead>
+              <tr>
+                                <th>Rider and Ride ID</th>
+                <th style="min-width:200px;">Route</th>
+                <th style="min-width:140px;white-space:nowrap;">Date</th>
+                <th>Driver Name</th>
+                <th>Language selection</th>
+                <th>Language matching</th>
+                <th>Language match status</th>
+                <th>Match time</th>
+                <th>Cost</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                                <td><div class="td-rider-name rider-name-dynamic">Jessica Bird</div><div class="td-rider-id">196153890133785226</div></td>
+                <td style="font-size:13px;">185 Berry St → UCSF Parnassus</td>
+                <td>Apr 13, 2025<br><span style="color:var(--text-secondary);">1:06 PM PT</span></td>
+                <td>Marcus</td>
+                <td class="rider-lang-dynamic">Spanish</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Spanish-speaking driver</td>
+                <td>2m 18s</td>
+                <td>$13.74</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">David Chen</div><div class="td-rider-id">196153890133785227</div></td>
+                <td style="font-size:13px;">SF General → 450 Sutter St</td>
+                <td>Apr 13, 2025<br><span style="color:var(--text-secondary);">11:30 AM PT</span></td>
+                <td>Li W.</td>
+                <td>Mandarin</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Mandarin-speaking driver</td>
+                <td>4m 05s</td>
+                <td>$18.20</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">Maria Santos</div><div class="td-rider-id">196153890133785228</div></td>
+                <td style="font-size:13px;">Zuckerberg SF Gen → 16th St BART</td>
+                <td>Apr 12, 2025<br><span style="color:var(--text-secondary);">3:15 PM PT</span></td>
+                <td>Erica</td>
+                <td>Portuguese</td>
+                <td><span class="match-badge match-badge--fallback"><span class="lpl-icon lpl-icon--alert-alt"></span> No</span></td>
+                <td class="td-match-status">Fallback match (English only)</td>
+                <td>10m 00s</td>
+                <td>$11.50</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">Anh Nguyen</div><div class="td-rider-id">196153890133785229</div></td>
+                <td style="font-size:13px;">100 Van Ness → Kaiser Mission</td>
+                <td>Apr 12, 2025<br><span style="color:var(--text-secondary);">10:00 AM PT</span></td>
+                <td>Tam N.</td>
+                <td>Vietnamese</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Vietnamese-speaking driver</td>
+                <td>1m 42s</td>
+                <td>$9.80</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">Elena Petrova</div><div class="td-rider-id">196153890133785230</div></td>
+                <td style="font-size:13px;">Sunset Health → CPMC Davies</td>
+                <td>Apr 11, 2025<br><span style="color:var(--text-secondary);">2:45 PM PT</span></td>
+                <td>Sarah M.</td>
+                <td>Russian</td>
+                <td><span class="match-badge match-badge--fallback"><span class="lpl-icon lpl-icon--alert-alt"></span> No</span></td>
+                <td class="td-match-status">Fallback match (English only)</td>
+                <td>15m 00s</td>
+                <td>$22.10</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">James Park</div><div class="td-rider-id">196153890133785231</div></td>
+                <td style="font-size:13px;">3801 Geary → UCSF Parnassus</td>
+                <td>Apr 11, 2025<br><span style="color:var(--text-secondary);">9:15 AM PT</span></td>
+                <td>Min-Jun K.</td>
+                <td>Korean</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Korean-speaking driver</td>
+                <td>5m 30s</td>
+                <td>$15.40</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">Rosa Hernandez</div><div class="td-rider-id">196153890133785232</div></td>
+                <td style="font-size:13px;">Mission &amp; 24th → SF General</td>
+                <td>Apr 10, 2025<br><span style="color:var(--text-secondary);">4:30 PM PT</span></td>
+                <td>Carlos R.</td>
+                <td>Spanish</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Spanish-speaking driver</td>
+                <td>1m 15s</td>
+                <td>$8.90</td>
+              </tr>
+              <tr>
+                                <td><div class="td-rider-name">Lin Wei</div><div class="td-rider-id">196153890133785233</div></td>
+                <td style="font-size:13px;">Chinatown → CPMC California</td>
+                <td>Apr 10, 2025<br><span style="color:var(--text-secondary);">11:00 AM PT</span></td>
+                <td>Amy L.</td>
+                <td>Cantonese</td>
+                <td><span class="match-badge match-badge--success"><span class="lpl-icon lpl-icon--checkmark"></span> Yes</span></td>
+                <td class="td-match-status">Matched with Cantonese-speaking driver</td>
+                <td>3m 52s</td>
+                <td>$12.30</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="history-table-pagination">
+          <div style="display:flex;align-items:center;gap:8px;">
+            Show
+            <select style="border:1px solid var(--stroke-tertiary);border-radius:6px;padding:4px 8px;font-size:13px;font-family:var(--font-text);">
+              <option>25</option><option>50</option><option>100</option>
+            </select>
+            25–50 of 98
+          </div>
+          <div class="history-table-pagination__nav">
+            <button><span class="lpl-icon lpl-icon--xs lpl-icon--chevron-left"></span></button>
+            <button><span class="lpl-icon lpl-icon--xs lpl-icon--chevron-right"></span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     R-1: Rider SMS — Ride Requested
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r1" style="display:none; background:#f5f3f2;">
+  <div class="sms-phone-wrapper">
+  <div class="sms-phone">
+    <div class="sms-status-bar">
+      <span class="sms-status-time">9:41</span>
+      <div class="sms-status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="4" width="3" height="8" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5.2 2 2.7 3.1 1 5l1.4 1.4C3.8 4.8 5.8 4 8 4s4.2.8 5.6 2.4L15 5c-1.7-1.9-4.2-3-7-3z" fill="currentColor"/><path d="M8 6C6.3 6 4.8 6.7 3.8 7.8L5.2 9.2C5.9 8.5 6.9 8 8 8s2.1.5 2.8 1.2l1.4-1.4C11.2 6.7 9.7 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div class="sms-header">
+      <span class="sms-header__back"><svg width="13" height="21" viewBox="0 0 13 21" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 1.5L2.5 10.5L11 19.5" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="sms-header__contact">
+        <img src="assets/rcs/LyftLogoRCS.svg" class="sms-header__avatar" alt="Lyft">
+        <div>
+          <div class="sms-header__name">Lyft Ride Updates <span>›</span></div>
+        </div>
+      </div>
+      <span class="sms-header__action"><svg width="24" height="18" viewBox="0 0 24 18" fill="none"><rect x="1" y="3" width="15" height="12" rx="2" stroke="#007AFF" stroke-width="1.5"/><path d="M16 8l5-3v8l-5-3V8z" stroke="#007AFF" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="sms-body">
+      <div class="sms-date">Hoy 3:00 PM</div>
+      <div class="sms-bubble sms-bubble--received">
+        <div class="sms-bubble__text">
+          LYFT: Hola Jessica, Starfleet Health solicitó un viaje para ti con Lyft, una empresa de transporte. No tendrás que pagar por el viaje.<br><br>
+          Estamos buscando un conductor que hable español para ti.<br><br>
+          Recogida: <span class="sms-link">185 Berry St, San Francisco, CA</span><br><br>
+          Destino: <span class="sms-link">UCSF Parnassus, San Francisco, CA</span><br><br>
+          Ver detalles del viaje o cancelar:
+        </div>
+        <div class="sms-link-preview">
+          <div class="sms-link-preview__image"><img src="assets/rcs/Lyft_RCS_RideDetails_1440x1080.jpg" alt="Detalles del viaje"></div>
+          <div class="sms-link-preview__banner">
+            <div class="sms-link-preview__title">Detalles del viaje</div>
+            <div class="sms-link-preview__domain">lyft.com</div>
+          </div>
+        </div>
+        <div class="sms-bubble__time">3:00 PM</div>
+      </div>
+    </div>
+    <div class="sms-input-bar">
+      <div class="sms-input-bar__plus">+</div>
+      <div class="sms-input-bar__field">iMessage</div>
+    </div>
+    <div class="sms-home-indicator"><div class="sms-home-indicator__bar"></div></div>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     R-2: Rider SMS — Driver Matched
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r2" style="display:none; background:#f5f3f2;">
+  <div class="sms-phone-wrapper">
+  <div class="sms-phone">
+    <div class="sms-status-bar">
+      <span class="sms-status-time">9:44</span>
+      <div class="sms-status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="4" width="3" height="8" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5.2 2 2.7 3.1 1 5l1.4 1.4C3.8 4.8 5.8 4 8 4s4.2.8 5.6 2.4L15 5c-1.7-1.9-4.2-3-7-3z" fill="currentColor"/><path d="M8 6C6.3 6 4.8 6.7 3.8 7.8L5.2 9.2C5.9 8.5 6.9 8 8 8s2.1.5 2.8 1.2l1.4-1.4C11.2 6.7 9.7 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div class="sms-header">
+      <span class="sms-header__back"><svg width="13" height="21" viewBox="0 0 13 21" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 1.5L2.5 10.5L11 19.5" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="sms-header__contact">
+        <img src="assets/rcs/LyftLogoRCS.svg" class="sms-header__avatar" alt="Lyft">
+        <div>
+          <div class="sms-header__name">Lyft Ride Updates <span>›</span></div>
+        </div>
+      </div>
+      <span class="sms-header__action"><svg width="24" height="18" viewBox="0 0 24 18" fill="none"><rect x="1" y="3" width="15" height="12" rx="2" stroke="#007AFF" stroke-width="1.5"/><path d="M16 8l5-3v8l-5-3V8z" stroke="#007AFF" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="sms-body">
+      <div class="sms-date">Hoy 3:00 PM</div>
+      <div class="sms-bubble sms-bubble--received">
+        <div class="sms-bubble__text">
+          LYFT: Hola Jessica, Starfleet Health solicitó un viaje para ti con Lyft, una empresa de transporte. No tendrás que pagar por el viaje.<br><br>
+          Estamos buscando un conductor que hable español para ti.<br><br>
+          Recogida: <span class="sms-link">185 Berry St, San Francisco, CA</span><br><br>
+          Destino: <span class="sms-link">UCSF Parnassus, San Francisco, CA</span><br><br>
+          Ver detalles del viaje o cancelar:
+        </div>
+        <div class="sms-link-preview">
+          <div class="sms-link-preview__image"><img src="assets/rcs/Lyft_RCS_RideDetails_1440x1080.jpg" alt="Detalles del viaje"></div>
+          <div class="sms-link-preview__banner">
+            <div class="sms-link-preview__title">Detalles del viaje</div>
+            <div class="sms-link-preview__domain">lyft.com</div>
+          </div>
+        </div>
+        <div class="sms-bubble__time">3:00 PM</div>
+      </div>
+
+      <div class="sms-date">Hoy 3:06 PM</div>
+      <div class="sms-bubble sms-bubble--received">
+        <div class="sms-bubble__text">
+          LYFT: Prepárate afuera, tu conductor que habla español Marcus llega en 6 minutos a <span class="sms-link">185 Berry St</span>.<br><br>
+          Una vez que llegue, tendrás 5 minutos antes de que se vaya.
+        </div>
+        <div class="sms-link-preview">
+          <div class="sms-link-preview__image" style="position:relative;">
+            <div id="map-r2" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="sms-link-preview__banner">
+            <div class="sms-link-preview__title">Sigue tu viaje en el mapa</div>
+            <div class="sms-link-preview__domain">lyft.com</div>
+          </div>
+        </div>
+        <div class="sms-bubble__time">3:06 PM</div>
+      </div>
+    </div>
+    <div class="sms-input-bar">
+      <div class="sms-input-bar__plus">+</div>
+      <div class="sms-input-bar__field">iMessage</div>
+    </div>
+    <div class="sms-home-indicator"><div class="sms-home-indicator__bar"></div></div>
+  </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     R-2b: Rider SMS — Driver Matched (No Language Match)
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r3" style="display:none; background:#f5f3f2;">
+  <div class="sms-phone-wrapper">
+  <div class="sms-phone">
+    <div class="sms-status-bar">
+      <span class="sms-status-time">9:44</span>
+      <div class="sms-status-icons">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="4" width="3" height="8" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5.2 2 2.7 3.1 1 5l1.4 1.4C3.8 4.8 5.8 4 8 4s4.2.8 5.6 2.4L15 5c-1.7-1.9-4.2-3-7-3z" fill="currentColor"/><path d="M8 6C6.3 6 4.8 6.7 3.8 7.8L5.2 9.2C5.9 8.5 6.9 8 8 8s2.1.5 2.8 1.2l1.4-1.4C11.2 6.7 9.7 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div class="sms-header">
+      <span class="sms-header__back"><svg width="13" height="21" viewBox="0 0 13 21" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M11 1.5L2.5 10.5L11 19.5" stroke="#007AFF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+      <div class="sms-header__contact">
+        <img src="assets/rcs/LyftLogoRCS.svg" class="sms-header__avatar" alt="Lyft">
+        <div>
+          <div class="sms-header__name">Lyft Ride Updates <span>›</span></div>
+        </div>
+      </div>
+      <span class="sms-header__action"><svg width="24" height="18" viewBox="0 0 24 18" fill="none"><rect x="1" y="3" width="15" height="12" rx="2" stroke="#007AFF" stroke-width="1.5"/><path d="M16 8l5-3v8l-5-3V8z" stroke="#007AFF" stroke-width="1.5" stroke-linejoin="round"/></svg></span>
+    </div>
+    <div class="sms-body">
+      <div class="sms-date">Hoy 3:00 PM</div>
+      <div class="sms-bubble sms-bubble--received">
+        <div class="sms-bubble__text">
+          LYFT: Hola Jessica, Starfleet Health solicitó un viaje para ti con Lyft, una empresa de transporte. No tendrás que pagar por el viaje.<br><br>
+          Estamos buscando un conductor que hable español para ti.<br><br>
+          Recogida: <span class="sms-link">185 Berry St, San Francisco, CA</span><br><br>
+          Destino: <span class="sms-link">UCSF Parnassus, San Francisco, CA</span><br><br>
+          Ver detalles del viaje o cancelar:
+        </div>
+        <div class="sms-link-preview">
+          <div class="sms-link-preview__image"><img src="assets/rcs/Lyft_RCS_RideDetails_1440x1080.jpg" alt="Detalles del viaje"></div>
+          <div class="sms-link-preview__banner">
+            <div class="sms-link-preview__title">Detalles del viaje</div>
+            <div class="sms-link-preview__domain">lyft.com</div>
+          </div>
+        </div>
+        <div class="sms-bubble__time">3:00 PM</div>
+      </div>
+
+      <div class="sms-date">Hoy 3:06 PM</div>
+      <div class="sms-bubble sms-bubble--received">
+        <div class="sms-bubble__text">
+          LYFT: No pudimos encontrar un conductor que hable español cerca. Prepárate afuera, tu conductora Erica llega en 3 minutos a <span class="sms-link">185 Berry St</span>.<br><br>
+          Una vez que llegue, tendrás 5 minutos antes de que se vaya.
+        </div>
+        <div class="sms-link-preview">
+          <div class="sms-link-preview__image" style="position:relative;">
+            <div id="map-r3" style="width:100%;height:100%;"></div>
+          </div>
+          <div class="sms-link-preview__banner">
+            <div class="sms-link-preview__title">Sigue tu viaje en el mapa</div>
+            <div class="sms-link-preview__domain">lyft.com</div>
+          </div>
+        </div>
+        <div class="sms-bubble__time">3:06 PM</div>
+      </div>
+    </div>
+    <div class="sms-input-bar">
+      <div class="sms-input-bar__plus">+</div>
+      <div class="sms-input-bar__field">iMessage</div>
+    </div>
+    <div class="sms-home-indicator"><div class="sms-home-indicator__bar"></div></div>
+  </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- R4: Push Notification (Lock Screen)         -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r4" style="display:none; background:#f5f3f2;">
+  <div class="sms-phone-wrapper">
+  <div class="sms-phone" style="background: transparent;">
+    <div class="lock-screen">
+      <div class="lock-screen__time">3:00</div>
+      <div class="lock-screen__date">Monday, April 13</div>
+
+      <div class="lock-screen__notifications">
+        <!-- Lyft notification -->
+        <div class="lock-notif" onclick="navTo('r5', document.querySelectorAll('.proto-dropdown__item')[10], 'dd-rider', 'Ride Details + Language Prompt')">
+          <div class="lock-notif__icon">
+            <img src="assets/rcs/LyftLogoRCS.svg" alt="Lyft">
+          </div>
+          <div class="lock-notif__body">
+            <div class="lock-notif__header">
+              <span class="lock-notif__app">Lyft</span>
+              <span class="lock-notif__when">now</span>
+            </div>
+            <div class="lock-notif__title">Your ride is scheduled</div>
+            <div class="lock-notif__text">Starfleet Health scheduled a Lyft for you on Mon, Apr 13 at 3:00 PM. Tap to view details.</div>
+          </div>
+        </div>
+
+        <!-- Older notification for context -->
+        <div class="lock-notif" style="opacity: 0.7;">
+          <div class="lock-notif__icon" style="background:#34C759; display:flex; align-items:center; justify-content:center;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+          </div>
+          <div class="lock-notif__body">
+            <div class="lock-notif__header">
+              <span class="lock-notif__app">Messages</span>
+              <span class="lock-notif__when">12m ago</span>
+            </div>
+            <div class="lock-notif__title">Mom</div>
+            <div class="lock-notif__text">Don't forget to call me when you get there!</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lock-screen__hint">Swipe up to unlock</div>
+      <div class="sms-home-indicator" style="background:transparent;">
+        <div class="sms-home-indicator__bar" style="background:rgba(255,255,255,0.4);"></div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- R5: Ride Details + Language Preference Sheet -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r5" style="display:none; background:#fff;">
+  <div class="sms-phone-wrapper">
+  <div class="app-phone">
+    <!-- Status bar -->
+    <div class="app-status-bar">
+      <span style="font-size:16px;font-weight:600;letter-spacing:0.5px;">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="4" width="3" height="8" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5.2 2 2.7 3.1 1 5l1.4 1.4C3.8 4.8 5.8 4 8 4s4.2.8 5.6 2.4L15 5c-1.7-1.9-4.2-3-7-3z" fill="currentColor"/><path d="M8 6C6.3 6 4.8 6.7 3.8 7.8L5.2 9.2C5.9 8.5 6.9 8 8 8s2.1.5 2.8 1.2l1.4-1.4C11.2 6.7 9.7 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+
+    <!-- App header with back arrow -->
+    <div class="app-header">
+      <div class="app-header__close" onclick="navTo('r4', document.querySelectorAll('.proto-dropdown__item')[9], 'dd-rider', 'Push Notification')">
+        <span class="lpl-icon lpl-icon--chevron-left" style="width:24px;height:24px;"></span>
+      </div>
+    </div>
+
+    <!-- Scrollable ride details content -->
+    <div class="app-content">
+      <!-- Hero: scheduled ride + car -->
+      <div class="ride-details-hero">
+        <div class="ride-details-hero__info">
+          <div class="ride-details-hero__label">Your scheduled ride</div>
+          <div class="ride-details-hero__datetime" id="r5-datetime"></div>
+        </div>
+        <img src="assets/mode illustrations/Type=LyftStandard.svg" class="ride-details-hero__car" alt="Lyft Standard">
+      </div>
+
+      <!-- Keep in mind card -->
+      <div class="keep-in-mind">
+        <div class="keep-in-mind__title">Keep in mind</div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon">
+            <span class="lpl-icon lpl-icon--phone-vibrate" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="keep-in-mind__text">Get notified when driver is on the way</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon">
+            <span class="lpl-icon lpl-icon--calendar-scheduled" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="keep-in-mind__text">Scheduled by Starfleet Health</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon">
+            <span class="lpl-icon lpl-icon--drive-closer" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="keep-in-mind__text">Your driver will wait 5 min before departing</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon">
+            <span class="lpl-icon lpl-icon--prohibit" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="keep-in-mind__text">No address change, extra stop, or round trips</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon">
+            <span class="lpl-icon lpl-icon--language" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="keep-in-mind__text">We'll try to match you with a Spanish-speaking driver</div>
+        </div>
+      </div>
+
+      <!-- Section divider -->
+      <div class="r5-section-divider"></div>
+
+      <!-- Trip details -->
+      <div class="trip-section">
+        <div class="trip-section__title">Trip details</div>
+        <div class="trip-detail-row">
+          <div class="trip-detail-row__icon">
+            <span class="lpl-icon lpl-icon--car-front" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="trip-detail-row__text">Lyft Standard · Lyft won't charge you for the ride</div>
+        </div>
+      </div>
+
+      <!-- Route (PUDO) -->
+      <div class="trip-route">
+        <div class="trip-route__line"></div>
+        <div class="trip-route__stop">
+          <div class="trip-route__icon">
+            <img src="assets/map/MapPoint-Start.svg" width="22" height="22" alt="Pickup">
+          </div>
+          <div>
+            <div class="trip-route__address">185 Berry St, San Francisco</div>
+            <div class="trip-route__label">Pickup at 3:00 PM</div>
+          </div>
+        </div>
+        <div class="trip-route__stop">
+          <div class="trip-route__icon">
+            <img src="assets/map/MapPoint-End.svg" width="24" height="24" alt="Dropoff">
+          </div>
+          <div>
+            <div class="trip-route__address">UCSF Parnassus</div>
+            <div class="trip-route__label">Est. drop-off at 3:20 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section divider -->
+      <div class="r5-section-divider"></div>
+
+      <!-- Manage ride -->
+      <div class="manage-section">
+        <div class="manage-section__title">Manage ride</div>
+        <div class="cancel-row">
+          <div class="cancel-row__icon">
+            <span class="lpl-icon lpl-icon--prohibit" style="width:24px;height:24px;"></span>
+          </div>
+          <div class="cancel-row__text">Cancel ride</div>
+        </div>
+      </div>
+
+      <!-- Contact banner (InlineCard pattern) -->
+      <div class="contact-banner">
+        <div class="contact-banner__icon">
+<svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M16 29C8.82 29 3 23.18 3 16S8.82 3 16 3s13 5.82 13 13-5.82 13-13 13zm2.167-14.083v8.125h-4.334v-8.125h4.334zm0-3.973a2.167 2.167 0 1 1-4.334 0 2.167 2.167 0 0 1 4.334 0z" fill="#00824C"/></svg>
+        </div>
+        <div class="contact-banner__text">Contact Starfleet Health with questions or to make changes.</div>
+      </div>
+
+      <div style="height: 24px;"></div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="concierge-toast" id="r5-toast" style="display:none;">
+      <div class="toast-icon">✓</div>
+      <div class="toast-text">Preferencias de idioma guardadas</div>
+    </div>
+
+    <!-- Home indicator -->
+    <div class="app-home-indicator">
+      <div class="app-home-indicator__bar"></div>
+    </div>
+
+    <!-- Language preference bottom sheet -->
+    <div class="lang-sheet-scrim" id="r5-scrim" onclick="closeLangSheet()"></div>
+    <div class="lang-sheet" id="r5-lang-sheet">
+      <div class="lang-sheet__handle"></div>
+      <button class="lang-sheet__close" onclick="closeLangSheet()"><span class="lpl-icon lpl-icon--close"></span></button>
+      <div class="lang-sheet__billboard">
+        <div class="lang-sheet__title text-headline-f2">Preferencias de idioma</div>
+        <div class="lang-sheet__message text-body-f2">Este viaje se solicitó con un conductor hispanohablante. ¿Le gustaría actualizar las preferencias de su aplicación?</div>
+      </div>
+      <div class="lang-sheet__content">
+        <div class="lang-pref-option">
+          <div class="lang-pref-option__info">
+            <div class="lang-pref-option__title">Actualizar la preferencia de lenguaje</div>
+            <div class="lang-pref-option__desc text-body-f3">Cambia el idioma de tu aplicación de Lyft a español</div>
+          </div>
+          <div class="ios-toggle" onclick="this.classList.toggle('on')">
+            <div class="ios-toggle__thumb"></div>
+          </div>
+        </div>
+
+        <div class="lang-pref-option">
+          <div class="lang-pref-option__info">
+            <div class="lang-pref-option__title">Preferencia de conductores hispanohablantes</div>
+            <div class="lang-pref-option__desc text-body-f3">Intentaremos asignarle conductores hispanohablantes en sus siguientes viajes.</div>
+          </div>
+          <div class="ios-toggle" onclick="this.classList.toggle('on')">
+            <div class="ios-toggle__thumb"></div>
+          </div>
+        </div>
+      </div>
+      <div class="lang-sheet__footer">
+        <button class="lang-sheet__cta" onclick="closeLangSheet()">Guardar preferencias</button>
+        <button class="lang-sheet__dismiss" onclick="closeLangSheet()">Descartar</button>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- R5B: Ride Details + Inline Language Card   -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="concierge-shell" id="shell-r5b" style="display:none; background:#fff;">
+  <div class="sms-phone-wrapper">
+  <div class="app-phone">
+    <div class="app-status-bar">
+      <span style="font-size:16px;font-weight:600;letter-spacing:0.5px;">9:41</span>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <svg width="16" height="12" viewBox="0 0 16 12"><rect x="0" y="4" width="3" height="8" rx="1" fill="currentColor"/><rect x="4.5" y="2.5" width="3" height="9.5" rx="1" fill="currentColor"/><rect x="9" y="1" width="3" height="11" rx="1" fill="currentColor"/><rect x="13.5" y="0" width="3" height="12" rx="1" fill="currentColor" opacity="0.3"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12"><path d="M8 2C5.2 2 2.7 3.1 1 5l1.4 1.4C3.8 4.8 5.8 4 8 4s4.2.8 5.6 2.4L15 5c-1.7-1.9-4.2-3-7-3z" fill="currentColor"/><path d="M8 6C6.3 6 4.8 6.7 3.8 7.8L5.2 9.2C5.9 8.5 6.9 8 8 8s2.1.5 2.8 1.2l1.4-1.4C11.2 6.7 9.7 6 8 6z" fill="currentColor"/><circle cx="8" cy="11" r="1.5" fill="currentColor"/></svg>
+        <svg width="25" height="12" viewBox="0 0 25 12"><rect x="0" y="1" width="22" height="10" rx="2" stroke="currentColor" stroke-width="1" fill="none"/><rect x="1.5" y="2.5" width="15" height="7" rx="1" fill="currentColor"/><rect x="23" y="4" width="2" height="4" rx="0.5" fill="currentColor"/></svg>
+      </div>
+    </div>
+    <div class="app-header">
+      <div class="app-header__close" onclick="navTo('r4', document.querySelectorAll('.proto-dropdown__item')[9], 'dd-rider', 'Push Notification')">
+        <span class="lpl-icon lpl-icon--chevron-left" style="width:24px;height:24px;"></span>
+      </div>
+    </div>
+    <div class="app-content">
+      <!-- Hero -->
+      <div class="ride-details-hero">
+        <div class="ride-details-hero__info">
+          <div class="ride-details-hero__label">Your scheduled ride</div>
+          <div class="ride-details-hero__datetime" id="r5b-datetime"></div>
+        </div>
+        <img src="assets/mode illustrations/Type=LyftStandard.svg" class="ride-details-hero__car" alt="Lyft Standard">
+      </div>
+
+      <!-- Inline language preference card -->
+      <div class="lang-inline-card">
+        <div class="lang-inline-card__icon">
+          <span class="lpl-icon lpl-icon--language" style="width:20px;height:20px;"></span>
+        </div>
+        <div class="lang-inline-card__body">
+          <div class="lang-inline-card__title">Preferencias de idioma</div>
+          <div class="lang-inline-card__toggles">
+            <div class="lang-inline-toggle">
+              <div class="lang-inline-toggle__label">Cambiar app a español</div>
+              <div class="ios-toggle" onclick="this.classList.toggle('on')"><div class="ios-toggle__thumb"></div></div>
+            </div>
+            <div class="lang-inline-toggle">
+              <div class="lang-inline-toggle__label">Conductores hispanohablantes</div>
+              <div class="ios-toggle" onclick="this.classList.toggle('on')"><div class="ios-toggle__thumb"></div></div>
+            </div>
+          </div>
+          <button class="lang-inline-card__save">Guardar preferencias</button>
+        </div>
+      </div>
+
+      <!-- Keep in mind -->
+      <div class="keep-in-mind">
+        <div class="keep-in-mind__title">Keep in mind</div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon"><span class="lpl-icon lpl-icon--phone-vibrate" style="width:24px;height:24px;"></span></div>
+          <div class="keep-in-mind__text">Get notified when driver is on the way</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon"><span class="lpl-icon lpl-icon--calendar-scheduled" style="width:24px;height:24px;"></span></div>
+          <div class="keep-in-mind__text">Scheduled by Starfleet Health</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon"><span class="lpl-icon lpl-icon--drive-closer" style="width:24px;height:24px;"></span></div>
+          <div class="keep-in-mind__text">Your driver will wait 5 min before departing</div>
+        </div>
+        <div class="keep-in-mind__item">
+          <div class="keep-in-mind__icon"><span class="lpl-icon lpl-icon--prohibit" style="width:24px;height:24px;"></span></div>
+          <div class="keep-in-mind__text">No address change, extra stop, or round trips</div>
+        </div>
+      </div>
+
+      <div class="r5-section-divider"></div>
+
+      <!-- Trip details -->
+      <div class="trip-section">
+        <div class="trip-section__title">Trip details</div>
+        <div class="trip-detail-row">
+          <div class="trip-detail-row__icon"><span class="lpl-icon lpl-icon--car-front" style="width:24px;height:24px;"></span></div>
+          <div class="trip-detail-row__text">Lyft Standard · Lyft won't charge you for the ride</div>
+        </div>
+      </div>
+
+      <!-- Route -->
+      <div class="trip-route">
+        <div class="trip-route__line"></div>
+        <div class="trip-route__stop">
+          <div class="trip-route__icon"><img src="assets/map/MapPoint-Start.svg" width="22" height="22" alt="Pickup"></div>
+          <div>
+            <div class="trip-route__address">185 Berry St, San Francisco</div>
+            <div class="trip-route__label">Pickup at 3:00 PM</div>
+          </div>
+        </div>
+        <div class="trip-route__stop">
+          <div class="trip-route__icon"><img src="assets/map/MapPoint-End.svg" width="24" height="24" alt="Dropoff"></div>
+          <div>
+            <div class="trip-route__address">UCSF Parnassus</div>
+            <div class="trip-route__label">Est. drop-off at 3:20 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="r5-section-divider"></div>
+
+      <!-- Manage ride -->
+      <div class="manage-section">
+        <div class="manage-section__title">Manage ride</div>
+        <div class="cancel-row">
+          <div class="cancel-row__icon"><span class="lpl-icon lpl-icon--prohibit" style="width:24px;height:24px;"></span></div>
+          <div class="cancel-row__text">Cancel ride</div>
+        </div>
+      </div>
+
+      <!-- Contact banner -->
+      <div class="contact-banner">
+        <div class="contact-banner__icon">
+          <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M16 29C8.82 29 3 23.18 3 16S8.82 3 16 3s13 5.82 13 13-5.82 13-13 13zm2.167-14.083v8.125h-4.334v-8.125h4.334zm0-3.973a2.167 2.167 0 1 1-4.334 0 2.167 2.167 0 0 1 4.334 0z" fill="#00824C"/></svg>
+        </div>
+        <div class="contact-banner__text">Contact Starfleet Health with questions or to make changes.</div>
+      </div>
+      <div style="height: 24px;"></div>
+    </div>
+    <div class="app-home-indicator">
+      <div class="app-home-indicator__bar"></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+
+<script>
+  // ── Dropdown Navigation ──
+  function toggleDropdown(ddId) {
+    const dd = document.getElementById(ddId);
+    const trigger = dd.querySelector('.proto-dropdown__trigger');
+    const menu = dd.querySelector('.proto-dropdown__menu');
+    const scrim = document.getElementById('dropdownScrim');
+    const isOpen = trigger.classList.contains('open');
+    closeAllDropdowns();
+    if (!isOpen) {
+      trigger.classList.add('open');
+      menu.classList.add('open');
+      scrim.classList.add('open');
+    }
+  }
+
+  function closeAllDropdowns() {
+    document.querySelectorAll('.proto-dropdown__trigger').forEach(t => t.classList.remove('open'));
+    document.querySelectorAll('.proto-dropdown__menu').forEach(m => m.classList.remove('open'));
+    document.getElementById('dropdownScrim').classList.remove('open');
+  }
+
+  function navTo(screenId, btn, ddId, label) {
+    closeAllDropdowns();
+    // Clear all active labels and trigger states
+    document.querySelectorAll('.proto-dropdown__trigger').forEach(t => t.classList.remove('has-active'));
+    document.querySelectorAll('.proto-dropdown__active-label').forEach(l => l.textContent = '');
+    // Set active label on the parent dropdown
+    var trigger = document.querySelector('#' + ddId + ' .proto-dropdown__trigger');
+    var labelEl = document.getElementById(ddId + '-label');
+    trigger.classList.add('has-active');
+    labelEl.textContent = label;
+    // Show the screen
+    showScreen(screenId, btn);
+  }
+
+  // Scale SMS phone frames to fit their container
+  function scaleSmsPhones() {
+    document.querySelectorAll('.sms-phone-wrapper').forEach(wrapper => {
+      const phone = wrapper.querySelector('.sms-phone') || wrapper.querySelector('.app-phone');
+      if (!phone || wrapper.offsetHeight === 0) return;
+      const availH = wrapper.offsetHeight - 32; // 16px padding top+bottom
+      const availW = wrapper.offsetWidth - 32;
+      const phoneH = 852;
+      const phoneW = 393;
+      const scaleH = availH / phoneH;
+      const scaleW = availW / phoneW;
+      const scale = Math.min(scaleH, scaleW, 1); // never scale up beyond 1
+      phone.style.transform = `scale(${scale})`;
+    });
+  }
+  window.addEventListener('resize', scaleSmsPhones);
+  // Run on initial load and whenever shells become visible
+  const origShowShell = null;
+
+  // Propagate C-1 form data to all subsequent screens
+  function propagateRiderData() {
+    const firstName = document.getElementById('c1-first-name')?.value?.trim() || '';
+    const lastName = document.getElementById('c1-last-name')?.value?.trim() || '';
+    const phone = document.getElementById('c1-phone')?.value?.trim() || '';
+    const langSelect = document.getElementById('c1-language');
+    const language = langSelect ? langSelect.options[langSelect.selectedIndex].text : '';
+    const pickup = document.getElementById('c1-pickup')?.value?.trim() || '';
+    const dropoff = document.getElementById('c1-dropoff')?.value?.trim() || '';
+
+    const fullName = (firstName && lastName) ? firstName + ' ' + lastName : '';
+
+    // Update rider name everywhere
+    if (fullName) {
+      document.querySelectorAll('.rider-name-dynamic').forEach(el => {
+        el.textContent = fullName;
+      });
+    }
+
+    // Update phone number in ride cards
+    if (phone) {
+      document.querySelectorAll('.rider-phone-dynamic').forEach(el => {
+        el.textContent = phone;
+      });
+    }
+
+    // Update language in A-1 table
+    if (language) {
+      document.querySelectorAll('.rider-lang-dynamic').forEach(el => {
+        el.textContent = language;
+      });
+    }
+
+    // Update language-related ride card fields (C-3 waiting text, C-4 match, C-5 no match)
+    if (language && language !== 'English') {
+      const c3LangVal = document.querySelector('#shell-c3 .ride-card__field-label');
+      document.querySelectorAll('.ride-card__field-value').forEach(el => {
+        // C-3: "Spanish (10 min wait)" pattern
+        if (el.textContent.includes('(10 min wait)')) {
+          el.textContent = language + ' (10 min wait)';
+        }
+        // C-4: "Speaks Spanish" pattern
+        const speaksMatch = el.querySelector('.match-badge--success');
+        if (speaksMatch && speaksMatch.textContent.includes('Speaks ')) {
+          speaksMatch.innerHTML = '<span class="lpl-icon lpl-icon--checkmark"></span> Speaks ' + language;
+        }
+        // C-5: "English only" stays as-is (driver doesn't speak the language)
+      });
+    }
+
+    // Update pickup/dropoff in ride cards if entered
+    if (pickup || dropoff) {
+      document.querySelectorAll('.ride-card__address').forEach((el, i) => {
+        // Even indexes = pickup, odd = dropoff within each card
+        if (el.classList.contains('ride-card__address--pickup') && pickup) {
+          el.textContent = pickup;
+        }
+        if (el.classList.contains('ride-card__address--dropoff') && dropoff) {
+          el.textContent = dropoff;
+        }
+      });
+    }
+  }
+
+  var c3AutoTransitionTimer = null;
+  var r1AutoTransitionTimer = null;
+  var r4AutoTransitionTimer = null;
+
+  function showScreen(id, btn) {
+    // Cancel any pending auto-transitions
+    if (c3AutoTransitionTimer) {
+      clearTimeout(c3AutoTransitionTimer);
+      c3AutoTransitionTimer = null;
+    }
+    if (r1AutoTransitionTimer) {
+      clearTimeout(r1AutoTransitionTimer);
+      r1AutoTransitionTimer = null;
+    }
+    if (r4AutoTransitionTimer) {
+      clearTimeout(r4AutoTransitionTimer);
+      r4AutoTransitionTimer = null;
+    }
+
+    // Propagate C-1 data before switching
+    propagateRiderData();
+
+    // Hide all shells
+    document.querySelectorAll('.concierge-shell, .admin-shell').forEach(s => s.style.display = 'none');
+    // Show target
+    document.getElementById('shell-' + id).style.display = 'flex';
+    // Scale SMS phones after shell is visible (double rAF to ensure layout is computed)
+    if (id === 'r1' || id === 'r2' || id === 'r3' || id === 'r4' || id === 'r5') {
+      requestAnimationFrame(() => requestAnimationFrame(scaleSmsPhones));
+    }
+    // Update dropdown items
+    document.querySelectorAll('.proto-dropdown__item').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    // Update map pill on C-2
+    if (id === 'c2') { updateMapPill(); }
+
+    // Show & auto-dismiss toast on C-3, then auto-transition to C-4
+    if (id === 'c3') {
+      const toast = document.getElementById('toast-c3');
+      if (toast) {
+        toast.classList.remove('hiding');
+        toast.style.display = 'flex';
+        setTimeout(() => { toast.classList.add('hiding'); }, 4000);
+        setTimeout(() => { toast.style.display = 'none'; }, 4500);
+      }
+      // Auto-transition to C4 after 10 seconds (simulates driver match)
+      c3AutoTransitionTimer = setTimeout(function() {
+        c3AutoTransitionTimer = null;
+        navTo('c4', document.querySelectorAll('.proto-dropdown__item')[3], 'dd-coordinator', 'Driver Language Matched');
+      }, 10000);
+    }
+
+    // Auto-transition R1→R2 after 10 seconds, then scroll to second message
+    if (id === 'r1') {
+      r1AutoTransitionTimer = setTimeout(function() {
+        r1AutoTransitionTimer = null;
+        navTo('r2', document.querySelectorAll('.proto-dropdown__item')[6], 'dd-rider', 'Driver En Route Language Matched');
+        // Scroll to the second message after a short delay for layout
+        setTimeout(function() {
+          var smsBody = document.querySelector('#shell-r2 .sms-body');
+          var secondDate = document.querySelectorAll('#shell-r2 .sms-date')[1];
+          if (smsBody && secondDate) {
+            smsBody.scrollTop = secondDate.offsetTop - smsBody.offsetTop - 10;
+          }
+        }, 600);
+      }, 10000);
+    }
+
+    // Auto-transition R4→R5 after 5 seconds (simulates tapping notification)
+    if (id === 'r4') {
+      r4AutoTransitionTimer = setTimeout(function() {
+        r4AutoTransitionTimer = null;
+        navTo('r5', document.querySelectorAll('.proto-dropdown__item')[10], 'dd-rider', 'Ride Details + Language Prompt');
+      }, 5000);
+    }
+
+    // Set dynamic date on R5 (2 days from now)
+    if (id === 'r5' || id === 'r5b') {
+      var d = new Date();
+      d.setDate(d.getDate() + 2);
+      var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      var dayName = days[d.getDay()];
+      var monthName = months[d.getMonth()];
+      var dateNum = d.getDate();
+      var elId = id === 'r5b' ? 'r5b-datetime' : 'r5-datetime';
+      var el = document.getElementById(elId);
+      if (el) el.innerHTML = dayName + ', ' + monthName + ' ' + dateNum + '<br>at 3:00 PM';
+    }
+
+    // Open language preference sheet on R5 after a short delay
+    if (id === 'r5') {
+      // Reset sheet state
+      closeLangSheet();
+      // Open after user has a moment to see the ride details
+      setTimeout(function() {
+        openLangSheet();
+      }, 7000);
+    }
+  }
+
+  function formatPhone(input) {
+    var digits = input.value.replace(/\D/g, '').substring(0, 10);
+    if (digits.length === 0) { input.value = ''; return; }
+    if (digits.length <= 3) { input.value = '(' + digits; }
+    else if (digits.length <= 6) { input.value = '(' + digits.substring(0,3) + ') ' + digits.substring(3); }
+    else { input.value = '(' + digits.substring(0,3) + ') ' + digits.substring(3,6) + '-' + digits.substring(6); }
+  }
+
+  // ── Rider app preferences detection (484 area code) ──
+  var riderPrefsApplied = false;
+  function checkRiderPrefs(input) {
+    var digits = input.value.replace(/\D/g, '');
+    var banner = document.getElementById('c1-rider-prefs-banner');
+    var langSelect = document.getElementById('c1-language');
+    if (!banner || !langSelect) return;
+
+    if (digits === '4841234567') {
+      if (!riderPrefsApplied) {
+        riderPrefsApplied = true;
+        banner.classList.remove('visible');
+        // Auto-set language to Spanish
+        langSelect.value = 'es';
+        langSelect.dispatchEvent(new Event('change'));
+        // Override info text with Spanish preference message
+        var infoText = document.getElementById('c1-lang-info-text');
+        if (infoText) infoText.textContent = 'Language detected from rider\'s app settings and ride history.';
+      }
+    } else {
+      if (riderPrefsApplied) {
+        riderPrefsApplied = false;
+        banner.classList.remove('visible');
+        // Turn off the language match toggle if it's on
+        var sw = document.getElementById('c1-lang-match-switch');
+        if (sw && sw.classList.contains('switch--on')) {
+          toggleLangMatch();
+        }
+        // Reset language to English
+        langSelect.value = 'en';
+        langSelect.dispatchEvent(new Event('change'));
+      }
+    }
+  }
+
+  // ── Language preference bottom sheet (R5) ──
+  function openLangSheet() {
+    var scrim = document.getElementById('r5-scrim');
+    var sheet = document.getElementById('r5-lang-sheet');
+    if (scrim) scrim.classList.add('visible');
+    if (sheet) sheet.classList.add('open');
+  }
+  function closeLangSheet() {
+    var scrim = document.getElementById('r5-scrim');
+    var sheet = document.getElementById('r5-lang-sheet');
+    if (scrim) scrim.classList.remove('visible');
+    if (sheet) sheet.classList.remove('open');
+
+    // Check if both toggles are on
+    var toggles = sheet ? sheet.querySelectorAll('.ios-toggle') : [];
+    var bothOn = toggles.length === 2 && toggles[0].classList.contains('on') && toggles[1].classList.contains('on');
+    if (bothOn) {
+      translateR5ToSpanish();
+      showR5Toast();
+    }
+  }
+
+  function translateR5ToSpanish() {
+    var r5 = document.getElementById('shell-r5');
+    if (!r5) return;
+    // Hero
+    var label = r5.querySelector('.ride-details-hero__label');
+    if (label) label.textContent = 'Tu viaje programado';
+    // Date — reformat in Spanish
+    var dt = r5.querySelector('.ride-details-hero__datetime');
+    if (dt) {
+      var d = new Date();
+      d.setDate(d.getDate() + 2);
+      var dias = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+      var meses = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      dt.innerHTML = dias[d.getDay()] + ', ' + d.getDate() + ' de ' + meses[d.getMonth()] + '<br>a las 3:00 PM';
+    }
+    // Keep in mind
+    var kimTitle = r5.querySelector('.keep-in-mind__title');
+    if (kimTitle) kimTitle.textContent = 'Ten en cuenta';
+    var kimItems = r5.querySelectorAll('.keep-in-mind__text');
+    var kimTranslations = [
+      'Recibe una notificación cuando el conductor esté en camino',
+      'Programado por Starfleet Health',
+      'Tu conductor esperará 5 min antes de partir',
+      'No se permiten cambios de dirección, paradas extra ni viajes de ida y vuelta',
+      'Intentaremos emparejarte con un conductor que hable español'
+    ];
+    kimItems.forEach(function(el, i) { if (kimTranslations[i]) el.textContent = kimTranslations[i]; });
+    // Trip details
+    var tripTitle = r5.querySelector('.trip-section__title');
+    if (tripTitle) tripTitle.textContent = 'Detalles del viaje';
+    var tripText = r5.querySelector('.trip-detail-row__text');
+    if (tripText) tripText.textContent = 'Lyft Standard · Lyft no te cobrará por el viaje';
+    // Route
+    var routeLabels = r5.querySelectorAll('.trip-route__label');
+    if (routeLabels[0]) routeLabels[0].textContent = 'Recogida a las 3:00 PM';
+    if (routeLabels[1]) routeLabels[1].textContent = 'Llegada est. a las 3:20 PM';
+    // Manage ride
+    var manageTitle = r5.querySelector('.manage-section__title');
+    if (manageTitle) manageTitle.textContent = 'Administrar viaje';
+    var cancelText = r5.querySelector('.cancel-row__text');
+    if (cancelText) cancelText.textContent = 'Cancelar viaje';
+    // Contact banner
+    var contactText = r5.querySelector('.contact-banner__text');
+    if (contactText) contactText.textContent = 'Contacta a Starfleet Health si tienes preguntas o para hacer cambios.';
+  }
+
+  function showR5Toast() {
+    var toast = document.getElementById('r5-toast');
+    if (!toast) return;
+    toast.style.display = 'flex';
+    toast.classList.remove('hiding');
+    toast.style.animation = 'none';
+    toast.offsetHeight; // reflow
+    toast.style.animation = '';
+    setTimeout(function() {
+      toast.classList.add('hiding');
+      setTimeout(function() { toast.style.display = 'none'; toast.classList.remove('hiding'); }, 400);
+    }, 3000);
+  }
+
+  function selectWait(btn) {
+    btn.parentElement.querySelectorAll('.wait-option').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Update the info box wait time text
+    var minutes = btn.textContent.replace(' min', '');
+    var waitTimeEl = document.getElementById('c1-match-wait-time');
+    if (waitTimeEl) waitTimeEl.textContent = minutes;
+  }
+
+  // Language Match toggle
+  function updateLangInfoText() {
+    var langSelect = document.getElementById('c1-language');
+    var externalInfo = document.getElementById('c1-lang-info');
+    var infoText = document.getElementById('c1-lang-info-text');
+    var descEl = document.getElementById('c1-lang-match-desc');
+    var langNameEl = document.getElementById('c1-match-lang-name');
+    var sw = document.getElementById('c1-lang-match-switch');
+    if (!langSelect || !infoText) return;
+
+    var langNames = { en: 'English', es: 'Spanish', pt: 'Portuguese', fr: 'French', zh: 'Chinese' };
+    var langName = langNames[langSelect.value] || langSelect.options[langSelect.selectedIndex].text;
+    var isMatchOn = sw && sw.classList.contains('switch--on');
+
+    // Update the language name span in the card
+    if (langNameEl) langNameEl.textContent = langName;
+
+    // Always show info box with language-specific text
+    if (externalInfo) externalInfo.style.display = '';
+    if (langSelect.value === 'en') {
+      infoText.textContent = 'Text notifications will be sent to the rider in English.';
+    } else {
+      infoText.textContent = 'Text notifications will be sent to the rider in ' + langName + '.';
+      // Update card body based on toggle state
+      if (descEl) {
+        descEl.innerHTML = '<div>Request a ' + langName + '-speaking driver.</div>';
+      }
+    }
+  }
+
+  /* ── C-2 Map Price Pill ── */
+  function getSelectedRidePrice() {
+    var selectedSub = document.querySelector('#shell-c2 .ride-sub.selected');
+    if (selectedSub) return parseFloat(selectedSub.dataset.price) || 0;
+    var selectedRow = document.querySelector('#shell-c2 .ride-type-row.selected');
+    if (selectedRow) return parseFloat(selectedRow.dataset.price) || 0;
+    return 13.74;
+  }
+  function getSelectedTip() {
+    var selectedTip = document.querySelector('#shell-c2 .tip-option.active');
+    if (selectedTip) return parseFloat(selectedTip.dataset.tip) || 0;
+    return 2.06;
+  }
+  function updateMapPill() {
+    var pill = document.getElementById('c2-map-pill');
+    if (!pill) return;
+    var ridePrice = getSelectedRidePrice();
+    var tip = getSelectedTip();
+    var total = ridePrice + tip;
+    var miles = '4.8';
+    if (tip > 0) {
+      pill.innerHTML = 'Total: $' + total.toFixed(2) + ' ( including $' + tip.toFixed(2) + ' tip ) &nbsp;&middot;&nbsp; ' + miles + ' miles';
+    } else {
+      pill.innerHTML = 'Total: $' + total.toFixed(2) + ' &nbsp;&middot;&nbsp; ' + miles + ' miles';
+    }
+  }
+  function selectRideSub(el) {
+    document.querySelectorAll('#shell-c2 .ride-sub').forEach(function(s) { s.classList.remove('selected'); });
+    document.querySelectorAll('#shell-c2 .ride-type-row').forEach(function(r) { r.classList.remove('selected'); });
+    el.classList.add('selected');
+    updateMapPill();
+  }
+  function selectRideType(el) {
+    document.querySelectorAll('#shell-c2 .ride-sub').forEach(function(s) { s.classList.remove('selected'); });
+    document.querySelectorAll('#shell-c2 .ride-type-row').forEach(function(r) { r.classList.remove('selected'); });
+    el.classList.add('selected');
+    updateMapPill();
+  }
+  function selectTip(el) {
+    document.querySelectorAll('#shell-c2 .tip-option').forEach(function(t) { t.classList.remove('active'); });
+    el.classList.add('active');
+    updateMapPill();
+  }
+
+  function toggleLangMatch() {
+    var sw = document.getElementById('c1-lang-match-switch');
+    var body = document.getElementById('c1-lang-match-body');
+    var card = document.getElementById('c1-lang-match-card');
+    var isOn = sw.classList.toggle('switch--on');
+    body.classList.toggle('visible', isOn);
+    card.classList.toggle('active', isOn);
+    updateLangInfoText();
+  }
+
+  // Show/hide language match card based on language selection
+  function handleLanguageChange() {
+    var langSelect = document.getElementById('c1-language');
+    var card = document.getElementById('c1-lang-match-card');
+    var langNameEl = document.getElementById('c1-match-lang-name');
+    if (!langSelect || !card) return;
+
+    var langNames = { en: 'English', es: 'Spanish', pt: 'Portuguese', fr: 'French', zh: 'Chinese' };
+    var selectedLang = langSelect.value;
+    var langName = langNames[selectedLang] || langSelect.options[langSelect.selectedIndex].text;
+
+    if (selectedLang !== 'en') {
+      card.classList.add('visible');
+      if (langNameEl) langNameEl.textContent = langName;
+    } else {
+      card.classList.remove('visible');
+      // Reset toggle when switching back to English
+      var sw = document.getElementById('c1-lang-match-switch');
+      var body = document.getElementById('c1-lang-match-body');
+      if (sw) sw.classList.remove('switch--on');
+      if (body) body.classList.remove('visible');
+      card.classList.remove('active');
+    }
+    updateLangInfoText();
+  }
+
+  // Attach language change listener
+  document.getElementById('c1-language')?.addEventListener('change', function() {
+    handleLanguageChange();
+    propagateRiderData();
+  });
+
+  // ── Leaflet Maps ──
+  const SF_CENTER = [37.7749, -122.4194];
+  const PICKUP = [37.7827, -122.3930];   // 185 Berry St
+  const DROPOFF = [37.7631, -122.4576];  // UCSF Parnassus
+  const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+  const TILE_ATTR = '&copy; CartoDB';
+
+  // Labeled pickup bubble with MapPoint-Start asset
+  function createPickupLabel() {
+    return L.divIcon({
+      className: 'custom-marker',
+      html: '<div style="position:relative;">' +
+        '<div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fff;border:2px solid #820076;border-radius:100px;padding:7px 24px;box-shadow:0 0 14px rgba(0,0,0,0.16), 0 0 1px rgba(0,0,0,0.12);font-family:var(--font-text,sans-serif);">' +
+          '<div style="font-size:13px;color:rgba(29,12,23,0.7);line-height:1.3;">Pickup in 1 min</div>' +
+          '<div style="font-size:14px;font-weight:600;color:#0C0B31;line-height:1.3;">185 Berry St</div>' +
+        '</div>' +
+        '<img src="assets/map/MapPoint-Start.svg" width="22" height="22" style="display:block;">' +
+      '</div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+  }
+
+  // Labeled dropoff bubble with MapPoint-End asset
+  function createDropoffLabel() {
+    return L.divIcon({
+      className: 'custom-marker',
+      html: '<div style="position:relative;">' +
+        '<div style="position:absolute;bottom:27px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#fff;border:2px solid #CF0090;border-radius:100px;padding:7px 24px;box-shadow:0 0 14px rgba(0,0,0,0.16), 0 0 1px rgba(0,0,0,0.12);font-family:var(--font-text,sans-serif);">' +
+          '<div style="font-size:13px;color:rgba(29,12,23,0.7);line-height:1.3;">Drop-off</div>' +
+          '<div style="font-size:14px;font-weight:600;color:#0C0B31;line-height:1.3;">UCSF Parnassus</div>' +
+        '</div>' +
+        '<img src="assets/map/MapPoint-End.svg" width="24" height="24" style="display:block;">' +
+      '</div>',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+  }
+
+  // Simple MapPoint icons (no label) for C-3/C-4/C-5
+  function createPickupIcon() {
+    return L.divIcon({
+      className: 'custom-marker',
+      html: '<img src="assets/map/MapPoint-Start.svg" width="22" height="22" style="display:block;">',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+  }
+  function createDropoffIcon() {
+    return L.divIcon({
+      className: 'custom-marker',
+      html: '<img src="assets/map/MapPoint-End.svg" width="24" height="24" style="display:block;">',
+      iconSize: [24, 24],
+      iconAnchor: [12, 12]
+    });
+  }
+
+  // Car icon for nearby drivers using CarType-Classic asset
+  function createCarIcon(rotation) {
+    return L.divIcon({
+      className: 'custom-marker',
+      html: '<div style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;transform:rotate('+(rotation||0)+'deg);"><img src="assets/map/CarType-Classic.png" width="36" height="36" style="display:block;"></div>',
+      iconSize: [40, 40],
+      iconAnchor: [20, 20]
+    });
+  }
+
+  // Nearby driver positions around SF
+  const NEARBY_CARS = [
+    { pos: [37.7860, -122.3920], rot: 45 },
+    { pos: [37.7790, -122.4050], rot: -30 },
+    { pos: [37.7750, -122.3980], rot: 120 },
+    { pos: [37.7700, -122.4150], rot: -60 },
+    { pos: [37.7680, -122.4350], rot: 90 },
+  ];
+
+  const maps = {};
+
+  function initMap(id, options = {}) {
+    const el = document.getElementById(id);
+    if (!el || maps[id]) return;
+
+    const map = L.map(id, {
+      zoomControl: false,
+      attributionControl: false,
+      dragging: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false
+    });
+
+    L.tileLayer(TILE_URL, { attribution: TILE_ATTR }).addTo(map);
+
+    if (options.showPins) {
+      var pickupIcon = options.labeled ? createPickupLabel() : createPickupIcon();
+      var dropoffIcon = options.labeled ? createDropoffLabel() : createDropoffIcon();
+      L.marker(PICKUP, { icon: pickupIcon }).addTo(map);
+      L.marker(DROPOFF, { icon: dropoffIcon }).addTo(map);
+      var fitPad = options.tightFit ? [20, 30] : [80, 80];
+      map.fitBounds([PICKUP, DROPOFF], { padding: fitPad });
+    } else {
+      map.setView(options.center || SF_CENTER, options.zoom || 13);
+    }
+
+    if (options.showRoute) {
+      // Approximate driving route from 185 Berry St to UCSF Parnassus
+      var routeCoords = [
+        [37.7827, -122.3930],  // 185 Berry St (pickup)
+        [37.7805, -122.3945],
+        [37.7790, -122.3970],
+        [37.7780, -122.4020],
+        [37.7760, -122.4080],
+        [37.7745, -122.4130],
+        [37.7735, -122.4180],
+        [37.7720, -122.4230],
+        [37.7710, -122.4280],
+        [37.7695, -122.4330],
+        [37.7680, -122.4380],
+        [37.7665, -122.4420],
+        [37.7650, -122.4470],
+        [37.7640, -122.4510],
+        [37.7631, -122.4576],  // UCSF Parnassus (dropoff)
+      ];
+      L.polyline(routeCoords, {
+        color: '#820076',
+        weight: 4,
+        opacity: 0.9,
+        smoothFactor: 1,
+        lineCap: 'round',
+        lineJoin: 'round'
+      }).addTo(map);
+    }
+
+    if (options.showCars) {
+      NEARBY_CARS.forEach(function(car) {
+        L.marker(car.pos, { icon: createCarIcon(car.rot) }).addTo(map);
+      });
+    }
+
+    maps[id] = map;
+    return map;
+  }
+
+  // Initialize C-1 default map (US overview)
+  const US_CENTER = [39.5, -98.35];
+  var c1Markers = [];
+
+  function updateC1Map() {
+    var map = maps['map-c1'];
+    if (!map) return;
+
+    var pickupVal = document.getElementById('c1-pickup')?.value?.trim();
+    var dropoffVal = document.getElementById('c1-dropoff')?.value?.trim();
+
+    // Remove existing markers
+    c1Markers.forEach(function(m) { map.removeLayer(m); });
+    c1Markers = [];
+
+    if (pickupVal && dropoffVal) {
+      // Both addresses — show labeled pins, zoom to fit both
+      var pm = L.marker(PICKUP, { icon: createPickupLabel() }).addTo(map);
+      var dm = L.marker(DROPOFF, { icon: createDropoffLabel() }).addTo(map);
+      c1Markers.push(pm, dm);
+      // Add car icons
+      NEARBY_CARS.forEach(function(car) {
+        var cm = L.marker(car.pos, { icon: createCarIcon(car.rot) }).addTo(map);
+        c1Markers.push(cm);
+      });
+      map.fitBounds([PICKUP, DROPOFF], { padding: [80, 80] });
+    } else if (pickupVal) {
+      // Only pickup — show pickup pin, zoom to SF
+      var pm = L.marker(PICKUP, { icon: createPickupLabel() }).addTo(map);
+      c1Markers.push(pm);
+      NEARBY_CARS.forEach(function(car) {
+        var cm = L.marker(car.pos, { icon: createCarIcon(car.rot) }).addTo(map);
+        c1Markers.push(cm);
+      });
+      map.setView(PICKUP, 14);
+    } else if (dropoffVal) {
+      // Only dropoff — show dropoff pin, zoom to SF
+      var dm = L.marker(DROPOFF, { icon: createDropoffLabel() }).addTo(map);
+      c1Markers.push(dm);
+      map.setView(DROPOFF, 14);
+    } else {
+      // No addresses — US overview
+      map.setView(US_CENTER, 4);
+    }
+  }
+
+  window.addEventListener('load', function() {
+    initMap('map-c1', { center: US_CENTER, zoom: 4 });
+
+    // Listen for address input changes (debounced — waits until user stops typing)
+    var mapDebounceTimer = null;
+    function debouncedUpdateC1Map() {
+      clearTimeout(mapDebounceTimer);
+      mapDebounceTimer = setTimeout(updateC1Map, 500);
+    }
+    var pickupInput = document.getElementById('c1-pickup');
+    var dropoffInput = document.getElementById('c1-dropoff');
+    if (pickupInput) {
+      pickupInput.addEventListener('input', debouncedUpdateC1Map);
+    }
+    if (dropoffInput) {
+      dropoffInput.addEventListener('input', debouncedUpdateC1Map);
+    }
+  });
+
+  // Initialize maps when screens are shown
+  const origShowScreen = showScreen;
+  showScreen = function(id, btn) {
+    origShowScreen(id, btn);
+    setTimeout(function() {
+      if (id === 'c2') {
+        initMap('map-c2', { showPins: true, labeled: true, showCars: true });
+        updateMapPill();
+      } else if (id === 'c3') {
+        initMap('map-c3', { showPins: true, showCars: true });
+      } else if (id === 'c4') {
+        initMap('map-c4', { showPins: true, showCars: true });
+      } else if (id === 'c5') {
+        initMap('map-c5', { showPins: true, showCars: true });
+      } else if (id === 'r2') {
+        initMap('map-r2', { showPins: true, showRoute: true, tightFit: true });
+      } else if (id === 'r3') {
+        initMap('map-r3', { showPins: true, showRoute: true, tightFit: true });
+      }
+      Object.values(maps).forEach(m => m.invalidateSize());
+    }, 100);
+  };
+
+  // C-3 banner countdown timer (4:42 → 0:00)
+  (function() {
+    var totalSeconds = 5 * 60;
+    var timerEl = document.getElementById('c3-banner-timer');
+    if (!timerEl) return;
+    var interval = setInterval(function() {
+      totalSeconds--;
+      if (totalSeconds <= 0) {
+        totalSeconds = 0;
+        clearInterval(interval);
+      }
+      var m = Math.floor(totalSeconds / 60);
+      var s = totalSeconds % 60;
+      timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }, 1000);
+  })();
+
+</script>
+
+</body>
+</html>

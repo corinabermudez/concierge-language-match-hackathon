@@ -1,0 +1,734 @@
+/*
+ * LPL (Lyft Product Language) CSS Design Tokens
+ * AUTO-GENERATED from lplint Color.json, Layout.json, Elevation.json, Motion.json
+ * Do not edit manually — run: node scripts/generate-tokens.js <lplint-attrs-path>
+ *
+ * Typography (2025 rebrand — Focus Typeset):
+ *   - Rebel Sans Display: Display F1 & F2 ONLY (36px+, hero text)
+ *   - Rebel Sans Text: Everything else — Headlines, Titles, Subtitles, Body, Caption
+ *   - Inter: Not used — reserved for future compatibility
+ *   - Lyft Logo Font: Lyft wordmark only
+ *   - Lyft Pro (legacy): Deprecated, kept for backward compatibility
+ */
+
+/* ─── Rebel Sans Text — Primary font for all non-Display text (variable font) ─── */
+@font-face {
+  font-family: 'Rebel Sans Text';
+  src: url('../fonts/RebelSansText-VF.woff2') format('woff2-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Rebel Sans Display — Display F1 & F2 only (static weights) ─── */
+@font-face {
+  font-family: 'Rebel Sans Display';
+  src: url('../fonts/RebelSansDisplay-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rebel Sans Display';
+  src: url('../fonts/RebelSansDisplay-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rebel Sans Display';
+  src: url('../fonts/RebelSansDisplay-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rebel Sans Display';
+  src: url('../fonts/RebelSansDisplay-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Rebel Sans Display';
+  src: url('../fonts/RebelSansDisplay-ExtraBold.woff2') format('woff2');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Inter — Reserved (not actively used, kept for future compatibility) ─── */
+@font-face {
+  font-family: 'Inter';
+  src: url('../fonts/Inter-VariableFont_opsz,wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Lyft Logo Font — Wordmark Only ─── */
+@font-face {
+  font-family: 'Lyft Logo';
+  src: url('../fonts/LyftLogoFont-Semibold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Lyft Pro (Legacy — deprecated) ─── */
+@font-face {
+  font-family: 'Lyft Pro';
+  src: url('https://cdn.lyft.com/static/coreui/LyftProUI-Regular.woff2') format('woff2'),
+       url('../fonts/LyftProUI-Light.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lyft Pro';
+  src: url('https://cdn.lyft.com/static/coreui/LyftProUI-SemiBold.woff2') format('woff2'),
+       url('../fonts/LyftProUI-Semibold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Lyft Pro';
+  src: url('https://cdn.lyft.com/static/coreui/LyftProUI-Bold.woff2') format('woff2'),
+       url('../fonts/LyftProUI-Bold.otf') format('opentype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* ─── Brand (2025 Rebrand) ─── */
+  --color-lyft-pink: #ff00bf;
+  --color-always-white: #ffffff;
+  --color-always-black: #000000;
+  --color-brand-vibrant-blue: #6c9ffa;
+  --color-brand-vibrant-green: #6ec590;
+  --color-brand-lime: #c1d58b;
+  --color-brand-vibrant-yellow: #f7b201;
+  --color-brand-vibrant-orange: #fb8c0e;
+  --color-brand-orange: #ff5312;
+  --color-brand-pastel-blue: #d9e6ff;
+  --color-brand-pastel-green: #c5eed2;
+  --color-brand-background-lime: #daedab;
+  --color-brand-pastel-yellow: #ffe1b0;
+  --color-brand-pastel-orange: #ffdfc4;
+  --color-brand-background-orange: #ffded5;
+
+  /* ─── Text ─── */
+  --color-text-primary: #1d0c17;
+  --color-text-secondary: #1d0c17b2;
+  --color-text-tertiary: #1d0c1799;
+  --color-text-placeholder: #1d0c1799;
+  --color-text-positive: #197849;
+  --color-text-negative: #c81534;
+  --color-text-interactive: #ac2a9e;
+  --color-text-highlight: #cf0090;
+  --color-text-interactive-legal: #ac2a9e;
+  --color-text-primary-inverse: #ffffff;
+
+  /* ─── Icon ─── */
+  --color-icon-primary: #1d0c17;
+  --color-icon-secondary: #1d0c17b2;
+  --color-icon-tertiary: #1d0c1799;
+  --color-icon-positive: #197849;
+  --color-icon-negative: #c81534;
+  --color-icon-interactive: #ac2a9e;
+  --color-icon-highlight: #cf0090;
+  --color-icon-primary-inverse: #ffffff;
+
+  /* ─── Background ─── */
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f1f0ec;
+  --color-background-neutral: #f1f0f0;
+  --color-background-scrim: #1d0c174d;
+
+  /* ─── Surface ─── */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #36220112;
+  --color-surface-tertiary: #36220129;
+  --color-surface-primary-inverse: #473a40;
+  --color-surface-interactive: #820076;
+  --color-surface-positive: #197849;
+  --color-surface-negative: #c81534;
+  --color-surface-selected: #820076;
+  --color-surface-selected-inverse: #ffffff;
+  --color-surface-neutral: #31222a12;
+
+  /* ─── Stroke ─── */
+  --color-stroke-primary: #1d0c17;
+  --color-stroke-secondary: #1d0c1773;
+  --color-stroke-tertiary: #36220129;
+  --color-stroke-primary-inverse: #ffffff;
+  --color-stroke-interactive: #820076;
+  --color-stroke-highlight: #cf0090;
+  --color-stroke-negative: #c81534;
+
+  /* ─── State: Pressed ─── */
+  --color-pressed-surface-primary: #e8e7e8;
+  --color-pressed-surface-primary-inverse: #61565b;
+  --color-pressed-surface-secondary: #3019142b;
+  --color-pressed-surface-tertiary: #39281a42;
+  --color-pressed-surface-interactive: #66035b;
+  --color-pressed-surface-selected: #66035b;
+  --color-pressed-surface-selected-inverse: #e8e7e8;
+  --color-pressed-surface-positive: #1a5a3b;
+  --color-pressed-surface-negative: #98122c;
+  --color-pressed-surface-neutral: #2919262b;
+
+  /* ─── State: Hover ─── */
+  --color-hover-surface-primary: #f1f0f1;
+  --color-hover-surface-primary-inverse: #594e53;
+  --color-hover-surface-secondary: #34231421;
+  --color-hover-surface-tertiary: #39221038;
+  --color-hover-surface-interactive: #700265;
+  --color-hover-surface-selected: #700265;
+  --color-hover-surface-selected-inverse: #f1f0f1;
+  --color-hover-surface-positive: #1a6540;
+  --color-hover-surface-negative: #a9132f;
+  --color-hover-surface-neutral: #32222921;
+
+  /* ─── Spectrum (2025 Rebrand — from Figma Core UI Color) ─── */
+  --color-gray0: #ffffff;
+  --color-gray5: #1e181b;
+  --color-gray8: #2c2528;
+  --color-gray10: #e7e5e5;
+  --color-gray15: #6b6164;
+  --color-gray20: #cfcbcc;
+  --color-gray30: #b9b2b4;
+  --color-gray40: #9f979a;
+  --color-gray50: #91888b;
+  --color-gray60: #746a6e;
+  --color-gray70: #594e53;
+  --color-gray80: #d4d1d2;
+  --color-gray90: #31222a;
+  --color-gray100: #1d0c17;
+
+  --color-brown0: #f7f6f3;
+  --color-brown5: #f1f0ec;
+  --color-brown10: #e9e5da;
+  --color-brown15: #e3d8c6;
+  --color-brown20: #dcc9b4;
+  --color-brown30: #d5b79d;
+  --color-brown40: #b9987b;
+  --color-brown50: #a38366;
+  --color-brown60: #84674c;
+  --color-brown70: #654b34;
+  --color-brown90: #4e3924;
+  --color-brown100: #e8dfd5;
+
+  --color-purple0: #fbf3ff;
+  --color-purple5: #faecfe;
+  --color-purple10: #f6ddfe;
+  --color-purple15: #f1cdfb;
+  --color-purple20: #ecb1f7;
+  --color-purple30: #e589f0;
+  --color-purple40: #e264e7;
+  --color-purple50: #d145cd;
+  --color-purple60: #ac2a9e;
+  --color-purple70: #820076;
+  --color-purple90: #6a0061;
+  --color-purple100: #42003b;
+
+  --color-pink0: #3b0024;
+  --color-pink5: #ffebf7;
+  --color-pink10: #ffdbf0;
+  --color-pink15: #ffcaea;
+  --color-pink20: #ffabde;
+  --color-pink30: #ff7fcf;
+  --color-pink40: #f759bd;
+  --color-pink50: #eb2cab;
+  --color-pink60: #cf0090;
+  --color-pink70: #9e006d;
+  --color-pink90: #6f004a;
+  --color-pink100: #46002b;
+
+  --color-rose0: #fff3f4;
+  --color-rose5: #ffecef;
+  --color-rose10: #ffdde2;
+  --color-rose15: #ffccd5;
+  --color-rose20: #ffb0bf;
+  --color-rose30: #ff84a3;
+  --color-rose40: #ff5b8c;
+  --color-rose50: #f03677;
+  --color-rose60: #c60b5a;
+  --color-rose70: #9f0045;
+  --color-rose90: #730031;
+  --color-rose100: #48001c;
+
+  --color-red0: #fff2f1;
+  --color-red5: #ffedec;
+  --color-red10: #ffdedd;
+  --color-red15: #ffcdcc;
+  --color-red20: #ffafae;
+  --color-red30: #ff8588;
+  --color-red40: #ff5d66;
+  --color-red50: #f0384d;
+  --color-red60: #c81534;
+  --color-red70: #9b0023;
+  --color-red90: #750018;
+  --color-red100: #4c000c;
+
+  --color-sunset0: #fff3f1;
+  --color-sunset5: #ffedea;
+  --color-sunset10: #ffded9;
+  --color-sunset15: #ffc8c1;
+  --color-sunset20: #ffab9e;
+  --color-sunset30: #ff8071;
+  --color-sunset40: #fc5c4c;
+  --color-sunset50: #ed3e30;
+  --color-sunset60: #c5261d;
+  --color-sunset70: #9c0205;
+  --color-sunset90: #750002;
+  --color-sunset100: #4c0003;
+
+  --color-orange0: #fff4f1;
+  --color-orange5: #ffede8;
+  --color-orange10: #ffded5;
+  --color-orange15: #ffc5b5;
+  --color-orange20: #ffa489;
+  --color-orange30: #ff784d;
+  --color-orange40: #ff5312;
+  --color-orange50: #e7480b;
+  --color-orange60: #c13800;
+  --color-orange70: #922800;
+  --color-orange90: #701c00;
+  --color-orange100: #470f00;
+
+  --color-amber0: #fff4eb;
+  --color-amber5: #ffeee0;
+  --color-amber10: #ffdfc4;
+  --color-amber15: #ffc999;
+  --color-amber20: #ffa957;
+  --color-amber30: #fb8c0e;
+  --color-amber40: #eb7f00;
+  --color-amber50: #ce6d00;
+  --color-amber60: #aa5801;
+  --color-amber70: #803f00;
+  --color-amber90: #622e00;
+  --color-amber100: #3f1a00;
+
+  --color-yellow0: #fff5e6;
+  --color-yellow5: #ffefd8;
+  --color-yellow10: #ffe1b0;
+  --color-yellow15: #ffd387;
+  --color-yellow20: #ffc249;
+  --color-yellow30: #f7b201;
+  --color-yellow40: #db9600;
+  --color-yellow50: #bb7d01;
+  --color-yellow60: #976300;
+  --color-yellow70: #734900;
+  --color-yellow90: #573600;
+  --color-yellow100: #382000;
+
+  --color-citron0: #fbf6e0;
+  --color-citron5: #f8f1d0;
+  --color-citron10: #f3e6a0;
+  --color-citron15: #eada82;
+  --color-citron20: #dfce73;
+  --color-citron30: #c8b85e;
+  --color-citron40: #ae9f4a;
+  --color-citron50: #988936;
+  --color-citron60: #7a6e24;
+  --color-citron70: #5d5212;
+  --color-citron90: #453d06;
+  --color-citron100: #2c2601;
+
+  --color-lime0: #f1f9e3;
+  --color-lime5: #e9f6d0;
+  --color-lime10: #daedab;
+  --color-lime15: #cde197;
+  --color-lime20: #c1d58b;
+  --color-lime30: #a8bb74;
+  --color-lime40: #90a35e;
+  --color-lime50: #7e904e;
+  --color-lime60: #627435;
+  --color-lime70: #49581f;
+  --color-lime90: #34420b;
+  --color-lime100: #1f2a02;
+
+  --color-green0: #ebfaea;
+  --color-green5: #e0f7df;
+  --color-green10: #c8efc7;
+  --color-green15: #a8e9a6;
+  --color-green20: #8edd8d;
+  --color-green30: #70c670;
+  --color-green40: #58ae5a;
+  --color-green50: #419743;
+  --color-green60: #2c7b30;
+  --color-green70: #155e1f;
+  --color-green90: #01470f;
+  --color-green100: #002c08;
+
+  --color-mint0: #e9faee;
+  --color-mint5: #d9f9e2;
+  --color-mint10: #c5eed2;
+  --color-mint15: #a8e7bd;
+  --color-mint20: #8fdbaa;
+  --color-mint30: #6ec590;
+  --color-mint40: #54ad78;
+  --color-mint50: #3f9363;
+  --color-mint60: #197849;
+  --color-mint70: #015e36;
+  --color-mint90: #004627;
+  --color-mint100: #002c16;
+
+  --color-teal0: #e6faf6;
+  --color-teal5: #d7f8f3;
+  --color-teal10: #bff0e9;
+  --color-teal15: #9ee3d9;
+  --color-teal20: #89d9ce;
+  --color-teal30: #62c3b7;
+  --color-teal40: #4aab9f;
+  --color-teal50: #359187;
+  --color-teal60: #13766c;
+  --color-teal70: #005b53;
+  --color-teal90: #00453f;
+  --color-teal100: #002824;
+
+  --color-cyan0: #edf7ff;
+  --color-cyan5: #e3f3ff;
+  --color-cyan10: #cce9ff;
+  --color-cyan15: #b1deff;
+  --color-cyan20: #94d2fd;
+  --color-cyan30: #64bcf5;
+  --color-cyan40: #4ca7dd;
+  --color-cyan50: #308dc2;
+  --color-cyan60: #1572a1;
+  --color-cyan70: #00567d;
+  --color-cyan90: #00405e;
+  --color-cyan100: #00263a;
+
+  --color-blue0: #f1f6ff;
+  --color-blue5: #eaf1ff;
+  --color-blue10: #d9e6ff;
+  --color-blue15: #c5d9ff;
+  --color-blue20: #b0ccfe;
+  --color-blue30: #8ab4fc;
+  --color-blue40: #6c9ffa;
+  --color-blue50: #4585f3;
+  --color-blue60: #276ad0;
+  --color-blue70: #184da4;
+  --color-blue90: #0a3880;
+  --color-blue100: #032057;
+
+  --color-indigo0: #f7f5ff;
+  --color-indigo5: #f2efff;
+  --color-indigo10: #e7e2ff;
+  --color-indigo15: #dad5ff;
+  --color-indigo20: #ccc4ff;
+  --color-indigo30: #b3a9fe;
+  --color-indigo40: #a092fd;
+  --color-indigo50: #8a73f8;
+  --color-indigo60: #734af7;
+  --color-indigo70: #5725cf;
+  --color-indigo90: #3e1a9e;
+  --color-indigo100: #250668;
+
+  /* ─── Deprecated Colors (pre-2025 — do not use in new designs) ─── */
+  --color-deprecated-brand-interactive: #523be4;
+  --color-deprecated-brand-vibrant-red: #ff516b;
+  --color-deprecated-brand-vibrant-purple: #ad71ff;
+  --color-deprecated-brand-vibrant-gray: #787891;
+  --color-deprecated-brand-vibrant-indigo: #523be4;
+  --color-deprecated-brand-midnight: #0c0b31;
+  --color-deprecated-brand-pastel-red: #ffe1e9;
+  --color-deprecated-brand-pastel-purple: #f6ebff;
+  --color-deprecated-brand-pastel-gray: #e7e7ef;
+  --color-deprecated-brand-pastel-indigo: #ebebff;
+  --color-deprecated-brand-pastel-pink: #ffe1f2;
+
+  /* ─── Typography ─── */
+  --font-family: 'Rebel Sans Text', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-family-display: 'Rebel Sans Display', -apple-system, sans-serif;
+  --font-family-logo: 'Lyft Logo', 'Rebel Sans Text', sans-serif;
+  --font-family-legacy: 'Lyft Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+
+  /* Text scale factor — set via JS to simulate device font scaling (1 = default, 2 = 200%) */
+  --text-scale: 1;
+
+  /* Base sizes (unscaled) */
+  --text-display-f1-size-base: 42px;
+  --text-display-f1-lh-base: 52px;
+  --text-display-f2-size-base: 36px;
+  --text-display-f2-lh-base: 42px;
+  --text-headline-f1-size-base: 28px;
+  --text-headline-f1-lh-base: 34px;
+  --text-headline-f2-size-base: 24px;
+  --text-headline-f2-lh-base: 30px;
+  --text-headline-f3-size-base: 21px;
+  --text-headline-f3-lh-base: 27px;
+  --text-title-f1-size-base: 17px;
+  --text-title-f1-lh-base: 23px;
+  --text-title-f2-size-base: 15px;
+  --text-title-f2-lh-base: 21px;
+  --text-title-f3-size-base: 13px;
+  --text-title-f3-lh-base: 19px;
+  --text-subtitle-f1-size-base: 17px;
+  --text-subtitle-f1-lh-base: 23px;
+  --text-subtitle-f2-size-base: 15px;
+  --text-subtitle-f2-lh-base: 21px;
+  --text-subtitle-f3-size-base: 13px;
+  --text-subtitle-f3-lh-base: 19px;
+  --text-body-f1-size-base: 17px;
+  --text-body-f1-lh-base: 23px;
+  --text-body-f2-size-base: 15px;
+  --text-body-f2-lh-base: 21px;
+  --text-body-f3-size-base: 13px;
+  --text-body-f3-lh-base: 19px;
+  --text-caption-f1-size-base: 13px;
+  --text-caption-f1-lh-base: 19px;
+  --text-caption-f2-size-base: 11px;
+  --text-caption-f2-lh-base: 17px;
+
+  /* Scaled sizes — these are what typography classes consume */
+  /* Display — Rebel Sans Display */
+  --text-display-f1-size: calc(var(--text-display-f1-size-base) * var(--text-scale));
+  --text-display-f1-weight: 600;
+  --text-display-f1-line-height: calc(var(--text-display-f1-lh-base) * var(--text-scale));
+  --text-display-f2-size: calc(var(--text-display-f2-size-base) * var(--text-scale));
+  --text-display-f2-weight: 700;
+  --text-display-f2-line-height: calc(var(--text-display-f2-lh-base) * var(--text-scale));
+
+  /* Headline — Rebel Sans Text Semibold (600) +15 grade */
+  --text-headline-f1-size: calc(var(--text-headline-f1-size-base) * var(--text-scale));
+  --text-headline-f1-weight: 600;
+  --text-headline-f1-line-height: calc(var(--text-headline-f1-lh-base) * var(--text-scale));
+  --text-headline-f2-size: calc(var(--text-headline-f2-size-base) * var(--text-scale));
+  --text-headline-f2-weight: 600;
+  --text-headline-f2-line-height: calc(var(--text-headline-f2-lh-base) * var(--text-scale));
+  --text-headline-f3-size: calc(var(--text-headline-f3-size-base) * var(--text-scale));
+  --text-headline-f3-weight: 600;
+  --text-headline-f3-line-height: calc(var(--text-headline-f3-lh-base) * var(--text-scale));
+
+  /* Title — Rebel Sans Text Medium (500) +15 grade */
+  --text-title-f1-size: calc(var(--text-title-f1-size-base) * var(--text-scale));
+  --text-title-f1-weight: 500;
+  --text-title-f1-line-height: calc(var(--text-title-f1-lh-base) * var(--text-scale));
+  --text-title-f2-size: calc(var(--text-title-f2-size-base) * var(--text-scale));
+  --text-title-f2-weight: 500;
+  --text-title-f2-line-height: calc(var(--text-title-f2-lh-base) * var(--text-scale));
+  --text-title-f3-size: calc(var(--text-title-f3-size-base) * var(--text-scale));
+  --text-title-f3-weight: 500;
+  --text-title-f3-line-height: calc(var(--text-title-f3-lh-base) * var(--text-scale));
+
+  /* Subtitle — Rebel Sans Text Regular (400) +5 grade */
+  --text-subtitle-f1-size: calc(var(--text-subtitle-f1-size-base) * var(--text-scale));
+  --text-subtitle-f1-weight: 400;
+  --text-subtitle-f1-line-height: calc(var(--text-subtitle-f1-lh-base) * var(--text-scale));
+  --text-subtitle-f2-size: calc(var(--text-subtitle-f2-size-base) * var(--text-scale));
+  --text-subtitle-f2-weight: 400;
+  --text-subtitle-f2-line-height: calc(var(--text-subtitle-f2-lh-base) * var(--text-scale));
+  --text-subtitle-f3-size: calc(var(--text-subtitle-f3-size-base) * var(--text-scale));
+  --text-subtitle-f3-weight: 400;
+  --text-subtitle-f3-line-height: calc(var(--text-subtitle-f3-lh-base) * var(--text-scale));
+
+  /* Body — Rebel Sans Text Regular (400) -5 grade */
+  --text-body-f1-size: calc(var(--text-body-f1-size-base) * var(--text-scale));
+  --text-body-f1-weight: 400;
+  --text-body-f1-line-height: calc(var(--text-body-f1-lh-base) * var(--text-scale));
+  --text-body-f2-size: calc(var(--text-body-f2-size-base) * var(--text-scale));
+  --text-body-f2-weight: 400;
+  --text-body-f2-line-height: calc(var(--text-body-f2-lh-base) * var(--text-scale));
+  --text-body-f3-size: calc(var(--text-body-f3-size-base) * var(--text-scale));
+  --text-body-f3-weight: 400;
+  --text-body-f3-line-height: calc(var(--text-body-f3-lh-base) * var(--text-scale));
+
+  /* Caption — Rebel Sans Text Bold (700) */
+  --text-caption-f1-size: calc(var(--text-caption-f1-size-base) * var(--text-scale));
+  --text-caption-f1-weight: 700;
+  --text-caption-f1-line-height: calc(var(--text-caption-f1-lh-base) * var(--text-scale));
+  /* Caption F2 — not in Focus Typeset, kept for UI convenience */
+  --text-caption-f2-size: calc(var(--text-caption-f2-size-base) * var(--text-scale));
+  --text-caption-f2-weight: 400;
+  --text-caption-f2-line-height: calc(var(--text-caption-f2-lh-base) * var(--text-scale));
+
+  /* ─── Spacing (8dp grid) ─── */
+  --spacing-zero: 0px;
+  --spacing-half: 4px;
+  --spacing-one: 8px;
+  --spacing-one-and-half: 12px;
+  --spacing-two: 16px;
+  --spacing-three: 24px;
+  --spacing-four: 32px;
+  --spacing-five: 40px;
+  --spacing-six: 48px;
+  --spacing-seven: 56px;
+  --spacing-eight: 64px;
+
+  /* ─── Elevation ─── */
+  --elevation-level0: none;
+  --elevation-level1: 0 0 1px 0 rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.08);
+  --elevation-level2: 0 0 1px 0 rgba(0,0,0,0.12), 0 2px 3px 0 rgba(0,0,0,0.16);
+  --elevation-level3: 0 0 1px 0 rgba(0,0,0,0.12), 0 2px 4px 0 rgba(0,0,0,0.16);
+  --elevation-level4: 0 0 1px 0 rgba(0,0,0,0.12), 0 3px 6px 0 rgba(0,0,0,0.16);
+  --elevation-level5: 0 0 1px 0 rgba(0,0,0,0.12), 0 4px 8px 0 rgba(0,0,0,0.16);
+  --elevation-level6: 0 0 1px 0 rgba(0,0,0,0.12), 0 6px 10px 0 rgba(0,0,0,0.16);
+  --elevation-level7: 0 0 1px 0 rgba(0,0,0,0.12), 0 12px 14px 0 rgba(0,0,0,0.16);
+  --elevation-level8: 0 6px 18px 0 rgba(0,0,0,0.12), 0 14px 20px 0 rgba(0,0,0,0.16);
+  --elevation-panel: 0 0 1px 0 rgba(0,0,0,0.12), 0 0 14px 0 rgba(0,0,0,0.16);
+
+  /* ─── Border Radius ─── */
+  --radius-small: 8px;
+  --radius-medium: 12px;
+  --radius-large: 16px;
+  --radius-full: 9999px;
+
+  /* ─── Animation ─── */
+  --duration-quick: 100ms;
+  --duration-short: 200ms;
+  --duration-short-exit: 200ms;
+  --duration-medium: 300ms;
+  --duration-medium-exit: 250ms;
+  --duration-long: 350ms;
+  --duration-long-exit: 300ms;
+  --easing-enter: cubic-bezier(0, 0, 0.15, 1);
+  --easing-exit: cubic-bezier(0.45, 0, 1, 1);
+  --easing-change: cubic-bezier(0.45, 0, 0.15, 1);
+}
+
+/* Dark mode — exact values from Figma Core UI Color (Dark Mode frames) */
+.dark-mode {
+  --color-text-primary: #efedee;
+  --color-text-secondary: #efedeebf;
+  --color-text-tertiary: #efedeea6;
+  --color-text-placeholder: #efedeea6;
+  --color-text-positive: #5eca8f;
+  --color-text-negative: #ff999a;
+  --color-text-interactive: #e792f6;
+  --color-text-highlight: #ff8dd4;
+  --color-text-interactive-legal: #e792f6;
+  --color-text-primary-inverse: #100f0f;
+  --color-icon-primary: #efedee;
+  --color-icon-secondary: #efedeebf;
+  --color-icon-tertiary: #efedeea6;
+  --color-icon-positive: #5eca8f;
+  --color-icon-negative: #ff999a;
+  --color-icon-interactive: #e792f6;
+  --color-icon-highlight: #ff8dd4;
+  --color-icon-primary-inverse: #100f0f;
+  --color-background-primary: #100f0f;
+  --color-background-secondary: #2b2825;
+  --color-background-neutral: #2c2528;
+  --color-background-scrim: #100f0f99;
+  --color-surface-primary: #100f0f;
+  --color-surface-secondary: #d0bead24;
+  --color-surface-tertiary: #d0bead36;
+  --color-surface-primary-inverse: #d4d1d2;
+  --color-surface-interactive: #f0a0ff;
+  --color-surface-positive: #5eca8f;
+  --color-surface-negative: #ff999a;
+  --color-surface-selected: #f0a0ff;
+  --color-surface-selected-inverse: #4c4347;
+  --color-surface-neutral: #c6c2c324;
+  --color-stroke-primary: #efedee;
+  --color-stroke-secondary: #efedee73;
+  --color-stroke-tertiary: #d0bead36;
+  --color-stroke-primary-inverse: #100f0f;
+  --color-stroke-interactive: #f0a0ff;
+  --color-stroke-highlight: #ff8dd4;
+  --color-stroke-negative: #ff999a;
+  --color-pressed-surface-primary: #2b2a2a;
+  --color-pressed-surface-primary-inverse: #b5b2b3;
+  --color-pressed-surface-secondary: #e0d9d03d;
+  --color-pressed-surface-tertiary: #d7cec24f;
+  --color-pressed-surface-interactive: #cc89d9;
+  --color-pressed-surface-selected: #cc89d9;
+  --color-pressed-surface-positive: #52ac7b;
+  --color-pressed-surface-negative: #d98384;
+  --color-pressed-surface-neutral: #dbd9d93d;
+  --color-hover-surface-primary: #222121;
+  --color-hover-surface-primary-inverse: #c4c1c2;
+  --color-hover-surface-secondary: #e5dace33;
+  --color-hover-surface-tertiary: #d8c9ba47;
+  --color-hover-surface-interactive: #de94ec;
+  --color-hover-surface-selected: #de94ec;
+  --color-hover-surface-positive: #58bb85;
+  --color-hover-surface-negative: #ec8e8f;
+  --color-hover-surface-neutral: #e0dada33;
+
+  --elevation-level1: 0 0 1px 0 rgba(0,0,0,0.56), 0 1px 1px 1px rgba(0,0,0,0.48);
+  --elevation-level2: 0 0 1px 0 rgba(0,0,0,0.56), 0 2px 3px 0 rgba(0,0,0,0.48);
+  --elevation-level3: 0 0 1px 0 rgba(0,0,0,0.56), 0 2px 4px 0 rgba(0,0,0,0.48);
+  --elevation-level4: 0 0 1px 0 rgba(0,0,0,0.56), 0 3px 6px 0 rgba(0,0,0,0.48);
+  --elevation-level5: 0 0 1px 0 rgba(0,0,0,0.56), 0 4px 8px 0 rgba(0,0,0,0.48);
+  --elevation-level6: 0 0 1px 0 rgba(0,0,0,0.56), 0 6px 10px 0 rgba(0,0,0,0.48);
+  --elevation-level7: 0 0 1px 0 rgba(0,0,0,0.56), 0 12px 14px 0 rgba(0,0,0,0.48);
+  --elevation-level8: 0 6px 18px 0 rgba(0,0,0,0.56), 0 14px 20px 0 rgba(0,0,0,0.48);
+  --elevation-panel: 0 0 1px 0 rgba(0,0,0,0.56), 0 0 14px 0 rgba(0,0,0,0.48);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(.light-mode) {
+    --color-text-primary: #efedee;
+    --color-text-secondary: #efedeebf;
+    --color-text-tertiary: #efedeea6;
+    --color-text-placeholder: #efedeea6;
+    --color-text-positive: #5eca8f;
+    --color-text-negative: #ff999a;
+    --color-text-interactive: #e792f6;
+    --color-text-highlight: #ff8dd4;
+    --color-text-interactive-legal: #e792f6;
+    --color-text-primary-inverse: #100f0f;
+    --color-icon-primary: #efedee;
+    --color-icon-secondary: #efedeebf;
+    --color-icon-tertiary: #efedeea6;
+    --color-icon-positive: #5eca8f;
+    --color-icon-negative: #ff999a;
+    --color-icon-interactive: #e792f6;
+    --color-icon-highlight: #ff8dd4;
+    --color-icon-primary-inverse: #100f0f;
+    --color-background-primary: #100f0f;
+    --color-background-secondary: #2b2825;
+    --color-background-neutral: #2c2528;
+    --color-background-scrim: #100f0f99;
+    --color-surface-primary: #100f0f;
+    --color-surface-secondary: #d0bead24;
+    --color-surface-tertiary: #d0bead36;
+    --color-surface-primary-inverse: #d4d1d2;
+    --color-surface-interactive: #f0a0ff;
+    --color-surface-positive: #5eca8f;
+    --color-surface-negative: #ff999a;
+    --color-surface-selected: #f0a0ff;
+    --color-surface-selected-inverse: #4c4347;
+    --color-surface-neutral: #c6c2c324;
+    --color-stroke-primary: #efedee;
+    --color-stroke-secondary: #efedee73;
+    --color-stroke-tertiary: #d0bead36;
+    --color-stroke-primary-inverse: #100f0f;
+    --color-stroke-interactive: #f0a0ff;
+    --color-stroke-highlight: #ff8dd4;
+    --color-stroke-negative: #ff999a;
+    --color-pressed-surface-primary: #2b2a2a;
+    --color-pressed-surface-primary-inverse: #b5b2b3;
+    --color-pressed-surface-secondary: #e0d9d03d;
+    --color-pressed-surface-tertiary: #d7cec24f;
+    --color-pressed-surface-interactive: #cc89d9;
+    --color-pressed-surface-selected: #cc89d9;
+    --color-pressed-surface-positive: #52ac7b;
+    --color-pressed-surface-negative: #d98384;
+    --color-pressed-surface-neutral: #dbd9d93d;
+    --color-hover-surface-primary: #222121;
+    --color-hover-surface-primary-inverse: #c4c1c2;
+    --color-hover-surface-secondary: #e5dace33;
+    --color-hover-surface-tertiary: #d8c9ba47;
+    --color-hover-surface-interactive: #de94ec;
+    --color-hover-surface-selected: #de94ec;
+    --color-hover-surface-positive: #58bb85;
+    --color-hover-surface-negative: #ec8e8f;
+    --color-hover-surface-neutral: #e0dada33;
+    --elevation-level1: 0 0 1px 0 rgba(0,0,0,0.56), 0 1px 1px 1px rgba(0,0,0,0.48);
+    --elevation-level2: 0 0 1px 0 rgba(0,0,0,0.56), 0 2px 3px 0 rgba(0,0,0,0.48);
+    --elevation-level3: 0 0 1px 0 rgba(0,0,0,0.56), 0 2px 4px 0 rgba(0,0,0,0.48);
+    --elevation-level4: 0 0 1px 0 rgba(0,0,0,0.56), 0 3px 6px 0 rgba(0,0,0,0.48);
+    --elevation-level5: 0 0 1px 0 rgba(0,0,0,0.56), 0 4px 8px 0 rgba(0,0,0,0.48);
+    --elevation-level6: 0 0 1px 0 rgba(0,0,0,0.56), 0 6px 10px 0 rgba(0,0,0,0.48);
+    --elevation-level7: 0 0 1px 0 rgba(0,0,0,0.56), 0 12px 14px 0 rgba(0,0,0,0.48);
+    --elevation-level8: 0 6px 18px 0 rgba(0,0,0,0.56), 0 14px 20px 0 rgba(0,0,0,0.48);
+    --elevation-panel: 0 0 1px 0 rgba(0,0,0,0.56), 0 0 14px 0 rgba(0,0,0,0.48);
+  }
+}
